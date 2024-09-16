@@ -1,9 +1,6 @@
 
----
-
 ## `README.md`
 
-```markdown
 # Zsh Copilot
 
 Zsh Copilot is a Zsh plugin that integrates AI-powered command suggestions directly into your terminal. It supports multiple AI backends, including OpenAI, Ollama, Claude, and Google's AI services, allowing you to choose the best assistant for your needs.
