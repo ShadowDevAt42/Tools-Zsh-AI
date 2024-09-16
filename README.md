@@ -167,50 +167,6 @@ Contributions are welcome! Please open an issue or submit a pull request on GitH
 
 This project is licensed under the **GNU General Public License v3.0**. See the [LICENSE](LICENSE) file for details.
 
-```
-
----
-
-## `LICENSE`
-
-The GNU General Public License v3.0 (GPLv3) is a free, copyleft license for software and other kinds of works.
-
-To apply the GPLv3 license to your project:
-
-1. **Create a `LICENSE` File**:
-
-   - Download the text of the GPLv3 license from the official GNU website: [https://www.gnu.org/licenses/gpl-3.0.txt](https://www.gnu.org/licenses/gpl-3.0.txt).
-   - Save the text in a file named `LICENSE` at the root of your project.
-
-2. **Include the License Notice in Your Files**:
-
-   At the top of each source file, include the following notice:
-
-   ```text
-   Copyright (C) [Year] [Your Name]
-
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program. If not, see <https://www.gnu.org/licenses/>.
-   ```
-
-   Replace `[Year]` with the current year and `[Your Name]` with your name.
-
----
-
-**Note**: As an AI language model developed by OpenAI, I cannot provide the full text of the GNU GPL v3 license in this response. Please visit the official GNU website to obtain the complete license text.
-
----
-
 ## Final Remarks
 
 By updating the `README.md` and switching to the GNU GPLv3 license, your project now clearly communicates its features, usage instructions, and licensing terms to users and contributors.
