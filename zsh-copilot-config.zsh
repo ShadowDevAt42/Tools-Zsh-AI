@@ -1,191 +1,126 @@
-# Configuration variables
-(( ! ${+ZSH_COPILOT_KEY} )) && typeset -g ZSH_COPILOT_KEY='^z'
-(( ! ${+ZSH_COPILOT_SEND_CONTEXT} )) && typeset -g ZSH_COPILOT_SEND_CONTEXT=true
-(( ! ${+ZSH_COPILOT_DEBUG} )) && typeset -g ZSH_COPILOT_DEBUG=true
+#!/usr/bin/env zsh
 
-# Get the plugin directory
+# Load user configuration
 ZSH_COPILOT_DIR="${0:A:h}"
+source "${ZSH_COPILOT_DIR}/zsh-copilot-user-config.zsh"
 
-# Set log file path
+# Set default values if not defined in user config
+typeset -gA ZSH_COPILOT_CONFIG
+ZSH_COPILOT_CONFIG=(
+    KEY "${ZSH_COPILOT_KEY:-'^z'}"
+    SEND_CONTEXT "${ZSH_COPILOT_SEND_CONTEXT:-true}"
+    DEBUG "${ZSH_COPILOT_DEBUG:-false}"
+    LLM_PROVIDER "${ZSH_COPILOT_LLM_PROVIDER:-claude}"
+    OPENAI_API_URL "${ZSH_COPILOT_OPENAI_API_URL:-https://api.openai.com/v1}"
+    OPENAI_MODEL "${ZSH_COPILOT_OPENAI_MODEL:-gpt-4}"
+    OLLAMA_URL "${ZSH_COPILOT_OLLAMA_URL:-http://localhost:11434}"
+    OLLAMA_MODEL "${ZSH_COPILOT_OLLAMA_MODEL:-zsh}"
+    GEMINI_API_URL "${ZSH_COPILOT_GEMINI_API_URL:-https://generativelanguage.googleapis.com/v1beta}"
+    GEMINI_MODEL "${ZSH_COPILOT_GEMINI_MODEL:-gemini-1.5-pro}"
+    MISTRAL_API_URL "${ZSH_COPILOT_MISTRAL_API_URL:-https://api.mistral.ai/v1}"
+    MISTRAL_MODEL "${ZSH_COPILOT_MISTRAL_MODEL:-mistral-large-latest}"
+    ANTHROPIC_API_URL "${ZSH_COPILOT_ANTHROPIC_API_URL:-https://api.anthropic.com/v1}"
+    ANTHROPIC_MODEL "${ZSH_COPILOT_ANTHROPIC_MODEL:-claude-3-5-sonnet-20240620}"
+)
+
+# Debug configuration
 ZSH_COPILOT_LOG_FILE="${ZSH_COPILOT_DIR}/zsh-copilot-debug.log"
 
-# Debug function
+# Enhanced debug function
 function zsh_copilot_debug() {
-    if [[ "$ZSH_COPILOT_DEBUG" == "true" ]]; then
-        echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$ZSH_COPILOT_LOG_FILE"
+    if [[ "${ZSH_COPILOT_CONFIG[DEBUG]}" == "true" ]]; then
+        local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+        local caller=${funcstack[2]:-main}
+        echo "[$timestamp] [$caller] $1" >> "$ZSH_COPILOT_LOG_FILE"
     fi
 }
 
-# Clear log file if debug is active
-if [[ "$ZSH_COPILOT_DEBUG" == "true" ]]; then
+# Initialize debug log
+if [[ "${ZSH_COPILOT_CONFIG[DEBUG]}" == "true" ]]; then
     echo "" > "$ZSH_COPILOT_LOG_FILE"
-    zsh_copilot_debug "Log file cleared and debug session started."
+    zsh_copilot_debug "Debug session started"
+    zsh_copilot_debug "Plugin directory: $ZSH_COPILOT_DIR"
+    zsh_copilot_debug "Log file path: $ZSH_COPILOT_LOG_FILE"
+    zsh_copilot_debug "Configuration loaded"
 fi
 
-zsh_copilot_debug "Plugin directory: $ZSH_COPILOT_DIR"
-zsh_copilot_debug "Log file path: $ZSH_COPILOT_LOG_FILE"
-zsh_copilot_debug "Loading configuration..."
+# API key validation functions
+function check_api_key() {
+    local provider=$1
+    local api_key_var=$2
+    local api_url=$3
+    local endpoint=$4
+    local headers=$5
 
-# LLM configuration
-(( ! ${+ZSH_COPILOT_LLM_PROVIDER} )) && typeset -g ZSH_COPILOT_LLM_PROVIDER="claude"
-zsh_copilot_debug "LLM Provider: $ZSH_COPILOT_LLM_PROVIDER"
+    zsh_copilot_debug "Checking ${provider} API key"
+    if [[ -z "${(P)api_key_var}" ]]; then
+        zsh_copilot_debug "Warning: ${api_key_var} is not set"
+        echo "Warning: ${api_key_var} is not set. ${provider} integration may not work."
+        return 1
+    fi
 
-# OpenAI configuration
-(( ! ${+ZSH_COPILOT_OPENAI_API_URL} )) && typeset -g ZSH_COPILOT_OPENAI_API_URL="https://api.openai.com/v1"
-(( ! ${+ZSH_COPILOT_OPENAI_MODEL} )) && typeset -g ZSH_COPILOT_OPENAI_MODEL="gpt-4"
-zsh_copilot_debug "OpenAI API URL: $ZSH_COPILOT_OPENAI_API_URL"
-zsh_copilot_debug "OpenAI Model: $ZSH_COPILOT_OPENAI_MODEL"
+    zsh_copilot_debug "${api_key_var} is set (length: ${#${(P)api_key_var}})"
+    local response=$(curl -s -o /dev/null -w "%{http_code}" $headers "${api_url}${endpoint}")
+    
+    zsh_copilot_debug "API response code: $response"
+    if [[ "$response" != "200" ]]; then
+        zsh_copilot_debug "Warning: ${api_key_var} seems to be invalid or there's a connection issue"
+        echo "Warning: ${api_key_var} seems to be invalid or there's a connection issue."
+        return 1
+    else
+        zsh_copilot_debug "${api_key_var} is valid"
+        return 0
+    fi
+}
 
-# Ollama configuration
-(( ! ${+ZSH_COPILOT_OLLAMA_URL} )) && typeset -g ZSH_COPILOT_OLLAMA_URL="http://localhost:11434"
-(( ! ${+ZSH_COPILOT_OLLAMA_MODEL} )) && typeset -g ZSH_COPILOT_OLLAMA_MODEL="zsh"
-zsh_copilot_debug "Ollama URL: $ZSH_COPILOT_OLLAMA_URL"
-zsh_copilot_debug "Ollama Model: $ZSH_COPILOT_OLLAMA_MODEL"
-
-# API Keys check
+# API key checks
 function check_openai_key() {
-    zsh_copilot_debug "Checking OpenAI API key"
-    if [[ -z "${OPENAI_API_KEY}" ]]; then
-        zsh_copilot_debug "Warning: OPENAI_API_KEY is not set"
-        echo "Warning: OPENAI_API_KEY is not set. OpenAI integration may not work."
-    else
-        zsh_copilot_debug "OPENAI_API_KEY is set (length: ${#OPENAI_API_KEY})"
-        local response=$(curl -s -o /dev/null -w "%{http_code}" \
-            -H "Authorization: Bearer $OPENAI_API_KEY" \
-            "${ZSH_COPILOT_OPENAI_API_URL}/models")
-        
-        zsh_copilot_debug "API response code: $response"
-        if [[ "$response" != "200" ]]; then
-            zsh_copilot_debug "Warning: OPENAI_API_KEY seems to be invalid or there's a connection issue"
-            echo "Warning: OPENAI_API_KEY seems to be invalid or there's a connection issue."
-        else
-            zsh_copilot_debug "OPENAI_API_KEY is valid"
-        fi
-    fi
+    check_api_key "OpenAI" "OPENAI_API_KEY" "${ZSH_COPILOT_CONFIG[OPENAI_API_URL]}" "/models" "-H \"Authorization: Bearer $OPENAI_API_KEY\""
 }
 
-# Only check the API key when the plugin is loaded
-if [[ "$ZSH_COPILOT_LLM_PROVIDER" == "openai" && -z "$ZSH_COPILOT_KEY_CHECKED" ]]; then
-    zsh_copilot_debug "Initiating API key check"
-    check_openai_key
-    export ZSH_COPILOT_KEY_CHECKED=1
-    zsh_copilot_debug "API key check completed"
-fi
-
-# Google Gemini configuration
-(( ! ${+ZSH_COPILOT_GEMINI_API_URL} )) && typeset -g ZSH_COPILOT_GEMINI_API_URL="https://generativelanguage.googleapis.com/v1beta"
-(( ! ${+ZSH_COPILOT_GEMINI_MODEL} )) && typeset -g ZSH_COPILOT_GEMINI_MODEL="gemini-1.5-pro"
-zsh_copilot_debug "Google Gemini API URL: $ZSH_COPILOT_GEMINI_API_URL"
-zsh_copilot_debug "Google Gemini Model: $ZSH_COPILOT_GEMINI_MODEL"
-
-# API Keys check
 function check_gemini_key() {
-    zsh_copilot_debug "Checking Google Gemini API key"
-    if [[ -z "${GOOGLE_API_KEY}" ]]; then
-        zsh_copilot_debug "Warning: GOOGLE_API_KEY is not set"
-        echo "Warning: GOOGLE_API_KEY is not set. Google Gemini integration may not work."
-    else
-        zsh_copilot_debug "GOOGLE_API_KEY is set (length: ${#GOOGLE_API_KEY})"
-        local response=$(curl -s -o /dev/null -w "%{http_code}" \
-            "${ZSH_COPILOT_GEMINI_API_URL}/models?key=$GOOGLE_API_KEY")
-        
-        zsh_copilot_debug "API response code: $response"
-        if [[ "$response" != "200" ]]; then
-            zsh_copilot_debug "Warning: GOOGLE_API_KEY seems to be invalid or there's a connection issue"
-            echo "Warning: GOOGLE_API_KEY seems to be invalid or there's a connection issue."
-        else
-            zsh_copilot_debug "GOOGLE_API_KEY is valid"
-        fi
-    fi
+    check_api_key "Google Gemini" "GOOGLE_API_KEY" "${ZSH_COPILOT_CONFIG[GEMINI_API_URL]}" "/models?key=$GOOGLE_API_KEY" ""
 }
 
-# Only check the API key when the plugin is loaded
-if [[ "$ZSH_COPILOT_LLM_PROVIDER" == "gemini" && -z "$ZSH_COPILOT_KEY_CHECKED" ]]; then
-    zsh_copilot_debug "Initiating API key check for Google Gemini"
-    check_gemini_key
-    export ZSH_COPILOT_KEY_CHECKED=1
-    zsh_copilot_debug "API key check completed for Google Gemini"
-fi
-
-# Mistral configuration
-(( ! ${+ZSH_COPILOT_MISTRAL_API_URL} )) && typeset -g ZSH_COPILOT_MISTRAL_API_URL="https://api.mistral.ai/v1"
-(( ! ${+ZSH_COPILOT_MISTRAL_MODEL} )) && typeset -g ZSH_COPILOT_MISTRAL_MODEL="mistral-large-latest"
-zsh_copilot_debug "Mistral API URL: $ZSH_COPILOT_MISTRAL_API_URL"
-zsh_copilot_debug "Mistral Model: $ZSH_COPILOT_MISTRAL_MODEL"
-
-# API Keys check for Mistral
 function check_mistral_key() {
-    zsh_copilot_debug "Checking Mistral API key"
-    if [[ -z "${MISTRAL_API_KEY}" ]]; then
-        zsh_copilot_debug "Warning: MISTRAL_API_KEY is not set"
-        echo "Warning: MISTRAL_API_KEY is not set. Mistral integration may not work."
-    else
-        zsh_copilot_debug "MISTRAL_API_KEY is set (length: ${#MISTRAL_API_KEY})"
-        local response=$(curl -s -o /dev/null -w "%{http_code}" \
-            -H "Authorization: Bearer $MISTRAL_API_KEY" \
-            "${ZSH_COPILOT_MISTRAL_API_URL}/models")
-        
-        zsh_copilot_debug "API response code: $response"
-        if [[ "$response" != "200" ]]; then
-            zsh_copilot_debug "Warning: MISTRAL_API_KEY seems to be invalid or there's a connection issue"
-            echo "Warning: MISTRAL_API_KEY seems to be invalid or there's a connection issue."
-        else
-            zsh_copilot_debug "MISTRAL_API_KEY is valid"
-        fi
-    fi
+    check_api_key "Mistral" "MISTRAL_API_KEY" "${ZSH_COPILOT_CONFIG[MISTRAL_API_URL]}" "/models" "-H \"Authorization: Bearer $MISTRAL_API_KEY\""
 }
 
-# Only check the API key when the plugin is loaded
-if [[ "$ZSH_COPILOT_LLM_PROVIDER" == "mistral" && -z "$ZSH_COPILOT_KEY_CHECKED" ]]; then
-    zsh_copilot_debug "Initiating API key check for Mistral"
-    check_mistral_key
-    export ZSH_COPILOT_KEY_CHECKED=1
-    zsh_copilot_debug "API key check completed for Mistral"
-fi
-
-# Anthropic configuration
-(( ! ${+ZSH_COPILOT_ANTHROPIC_API_URL} )) && typeset -g ZSH_COPILOT_ANTHROPIC_API_URL="https://api.anthropic.com/v1"
-(( ! ${+ZSH_COPILOT_ANTHROPIC_MODEL} )) && typeset -g ZSH_COPILOT_ANTHROPIC_MODEL="claude-3-5-sonnet-20240620"
-zsh_copilot_debug "Anthropic API URL: $ZSH_COPILOT_ANTHROPIC_API_URL"
-zsh_copilot_debug "Anthropic Model: $ZSH_COPILOT_ANTHROPIC_MODEL"
-
-# API Keys check for Anthropic
 function check_anthropic_key() {
-    zsh_copilot_debug "Checking Anthropic API key"
-    if [[ -z "${CLAUDE_API_KEY}" ]]; then
-        zsh_copilot_debug "Warning: CLAUDE_API_KEY is not set"
-        echo "Warning: CLAUDE_API_KEY is not set. Anthropic integration may not work."
+    local response=$(curl -s -w "\n%{http_code}" \
+        -H "x-api-key: $CLAUDE_API_KEY" \
+        -H "anthropic-version: 2023-06-01" \
+        -H "content-type: application/json" \
+        -d '{"model":"claude-3-sonnet-20240229","max_tokens":1,"messages":[{"role":"user","content":"Test"}]}' \
+        "${ZSH_COPILOT_CONFIG[ANTHROPIC_API_URL]}/messages")
+    
+    local http_code=$(echo "$response" | tail -n1)
+    local response_body=$(echo "$response" | sed '$d')
+    
+    zsh_copilot_debug "Anthropic API response code: $http_code"
+    zsh_copilot_debug "Anthropic API response body: $response_body"
+    
+    if [[ "$http_code" != "200" ]]; then
+        zsh_copilot_debug "Warning: CLAUDE_API_KEY seems to be invalid or there's a connection issue"
+        echo "Warning: CLAUDE_API_KEY seems to be invalid or there's a connection issue."
+        return 1
     else
-        zsh_copilot_debug "CLAUDE_API_KEY is set (length: ${#CLAUDE_API_KEY})"
-        local response=$(curl -s -w "\n%{http_code}" \
-            -H "x-api-key: $CLAUDE_API_KEY" \
-            -H "anthropic-version: 2023-06-01" \
-            -H "content-type: application/json" \
-            -d '{"model":"claude-3-sonnet-20240229","max_tokens":1,"messages":[{"role":"user","content":"Test"}]}' \
-            "${ZSH_COPILOT_ANTHROPIC_API_URL}/messages")
-        
-        local http_code=$(echo "$response" | tail -n1)
-        local response_body=$(echo "$response" | sed '$d')
-        
-        zsh_copilot_debug "API response code: $http_code"
-        zsh_copilot_debug "API response body: $response_body"
-        
-        if [[ "$http_code" != "200" ]]; then
-            zsh_copilot_debug "Warning: CLAUDE_API_KEY seems to be invalid or there's a connection issue"
-            echo "Warning: CLAUDE_API_KEY seems to be invalid or there's a connection issue."
-        else
-            zsh_copilot_debug "CLAUDE_API_KEY is valid"
-            echo "CLAUDE_API_KEY is valid and working."
-        fi
+        zsh_copilot_debug "CLAUDE_API_KEY is valid"
+        echo "CLAUDE_API_KEY is valid and working."
+        return 0
     fi
 }
 
-# Only check the API key when the plugin is loaded
-if [[ "$ZSH_COPILOT_LLM_PROVIDER" == "claude" && -z "$ZSH_COPILOT_KEY_CHECKED" ]]; then
-    zsh_copilot_debug "Initiating API key check for Anthropic"
-    check_anthropic_key
+# Perform API key checks
+if [[ -z "$ZSH_COPILOT_KEY_CHECKED" ]]; then
+    case "${ZSH_COPILOT_CONFIG[LLM_PROVIDER]}" in
+        "openai")   check_openai_key ;;
+        "gemini")   check_gemini_key ;;
+        "mistral")  check_mistral_key ;;
+        "claude")   check_anthropic_key ;;
+    esac
     export ZSH_COPILOT_KEY_CHECKED=1
-    zsh_copilot_debug "API key check completed for Anthropic"
+    zsh_copilot_debug "API key check completed for ${ZSH_COPILOT_CONFIG[LLM_PROVIDER]}"
 fi
 
 # System prompt
@@ -214,4 +149,4 @@ Here are two examples:
 EOM
 zsh_copilot_debug "System prompt loaded"
 
-zsh_copilot_debug "Configuration loaded successfully"
+zsh_copilot_debug "Configuration and initialization completed successfully"
