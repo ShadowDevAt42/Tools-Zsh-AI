@@ -1,182 +1,141 @@
-
-## `README.md`
-
 # Zsh Copilot
 
-Zsh Copilot is a Zsh plugin that integrates AI-powered command suggestions directly into your terminal. It supports multiple AI backends, including OpenAI, Ollama, Claude, and Google's AI services, allowing you to choose the best assistant for your needs.
+Zsh Copilot is an AI-powered command-line assistant that helps you with shell commands using OpenAI's GPT models or Ollama's local models.
 
 ## Features
 
-- **AI-Powered Suggestions**: Get intelligent command completions and suggestions as you type.
-- **Multiple AI Backends**: Choose from OpenAI, Ollama, Claude, or Google AI services.
-- **Configurable Key Bindings**: Assign different key shortcuts to each AI backend for quick access.
-- **Context-Aware**: The assistant considers your system information, current directory, and shell environment to provide relevant suggestions.
-- **Customizable**: Easily configure settings and add new AI backends.
+- Provides intelligent command suggestions and completions
+- Supports both OpenAI and Ollama as AI providers
+- Customizable key binding for triggering suggestions
+- Option to include system context in prompts
+- Debug logging for troubleshooting
+- API key validation for OpenAI
 
 ## Installation
 
-1. **Clone the Repository**
-
-   ```bash
-   git clone https://github.com/yourusername/zsh-copilot.git
+1. Clone the repository:
+   ```
+   git clone https://github.com/yourusername/zsh-copilot.git ~/.zsh/zsh-copilot
    ```
 
-2. **Navigate to the Directory**
-
-   ```bash
-   cd zsh-copilot
-   ```
-
-3. **Update Configuration**
-
-   Edit the configuration file `config/config.zsh` to set your API keys, preferred settings, and key bindings.
-
-## Usage
-
-1. **Source the Plugin in Your `.zshrc`**
-
-   Add the following line to your `.zshrc` file:
-
+2. Add the following to your `~/.zshrc`:
    ```zsh
-   source /path/to/zsh-copilot/zsh-copilot.plugin.zsh
+   source ~/.zsh/zsh-copilot/zsh-copilot.zsh
    ```
 
-   Replace `/path/to/zsh-copilot` with the actual path to where you cloned the repository.
-
-2. **Reload Your Shell**
-
-   ```bash
+3. Reload your Zsh configuration or restart your terminal:
+   ```
    source ~/.zshrc
    ```
 
-3. **Activate Zsh Copilot**
-
-   - Start typing a command in your terminal.
-   - Press the configured key binding to receive AI suggestions.
-
 ## Configuration
 
-All configurations are stored in `config/config.zsh`. Below are the key settings you can customize:
+### API Keys
 
-- **Key Bindings**: Map key bindings to AI backends.
+Set your OpenAI API key in your `~/.zshrc` or `~/.zshenv`:
 
-  ```zsh
-  typeset -A ZSH_COPILOT_KEYS=(
-      '^O' "openai"
-      '^L' "ollama"
-      '^C' "claude"
-      '^G' "google"
-  )
-  ```
+```zsh
+export OPENAI_API_KEY="your_openai_api_key_here"
+```
 
-  - `^O` represents `Ctrl+O`.
-  - Modify the key combinations and backend names as desired.
+### API Key Validation
 
-- **Send Context Information**:
+Zsh Copilot includes an API key validation feature:
 
-  ```zsh
-  : ${ZSH_COPILOT_SEND_CONTEXT:=true}
-  ```
+- The plugin checks the validity of your OpenAI API key when it's first loaded.
+- If the key is missing or appears to be invalid, you'll see a warning message.
+- This check is performed only once per session to avoid unnecessary API calls.
 
-  - When set to `true`, the assistant receives additional context about your environment.
+If you see a warning about your API key:
+1. Ensure that you've correctly set the `OPENAI_API_KEY` in your `~/.zshrc` or `~/.zshenv`.
+2. Check that your API key is valid and has the necessary permissions.
+3. If the issue persists, there might be a connection problem to the OpenAI API.
 
-- **Enable Debug Logging**:
+You can manually trigger a re-check of your API key by reloading your Zsh configuration:
+```
+source ~/.zshrc
+```
 
-  ```zsh
-  : ${ZSH_COPILOT_DEBUG:=false}
-  ```
+### Plugin Settings
 
-  - Set to `true` to enable logging for troubleshooting.
+The plugin comes with default settings, but you can customize them if needed. These settings are defined in the `zsh-copilot-config.zsh` file. If you want to change them, you can do so by editing this file directly:
 
-- **AI Backend Configurations**:
+```zsh
+# Key binding to trigger Zsh Copilot (default: ^z)
+ZSH_COPILOT_KEY='^z'
 
-  - **OpenAI**:
+# Whether to send context information to the AI model (default: true)
+ZSH_COPILOT_SEND_CONTEXT=true
 
-    ```zsh
-    : ${OPENAI_API_KEY:='your-openai-api-key'}
-    : ${OPENAI_API_URL:='https://api.openai.com'}
-    ```
+# AI provider to use: "openai" or "ollama" (default: openai)
+ZSH_COPILOT_LLM_PROVIDER="openai"
 
-  - **Ollama**:
+# OpenAI model to use (default: gpt-4)
+ZSH_COPILOT_OPENAI_MODEL="gpt-4"
 
-    ```zsh
-    : ${OLLAMA_API_URL:='http://localhost:11434'}
-    : ${OLLAMA_MODEL:='llama3'}
-    ```
+# Ollama model to use (default: llama3.1:8b)
+ZSH_COPILOT_OLLAMA_MODEL="llama3.1:8b"
 
-  - **Claude**:
+# Enable debug logging (default: false)
+ZSH_COPILOT_DEBUG=false
+```
 
-    ```zsh
-    : ${CLAUDE_API_KEY:='your-claude-api-key'}
-    : ${CLAUDE_API_URL:='https://api.anthropic.com'}
-    ```
+If you prefer not to modify the plugin files directly, you can override these settings in your `~/.zshrc` file. Add the following lines before sourcing the plugin, adjusting the values as needed:
 
-  - **Google AI Services**:
+```zsh
+export ZSH_COPILOT_KEY="^z"
+export ZSH_COPILOT_SEND_CONTEXT=true
+export ZSH_COPILOT_LLM_PROVIDER="openai"
+export ZSH_COPILOT_OPENAI_MODEL="gpt-4"
+export ZSH_COPILOT_OLLAMA_MODEL="llama3.1:8b"
+export ZSH_COPILOT_DEBUG=false
 
-    ```zsh
-    : ${GOOGLE_API_KEY:='your-google-api-key'}
-    : ${GOOGLE_API_URL:='https://generativelanguage.googleapis.com'}
-    ```
+source ~/.zsh/zsh-copilot/zsh-copilot.zsh
+```
 
-## Supported AI Backends
+This way, your personal settings will take precedence over the default ones in the plugin configuration file.
 
-### OpenAI
+## Usage
 
-- **Requirements**: OpenAI API key.
-- **Usage**: Press `Ctrl+O` to get suggestions from OpenAI.
+1. Type a partial command or describe what you want to do.
+2. Press the configured key (default: Ctrl+Z) to trigger Zsh Copilot.
+3. Zsh Copilot will either complete your command or suggest a new one.
 
-### Ollama
-
-- **Requirements**: Ollama installed and running.
-- **Usage**: Press `Ctrl+L` to get suggestions from Ollama.
-
-### Claude
-
-- **Requirements**: Access to Claude's API.
-- **Usage**: Press `Ctrl+C` to get suggestions from Claude.
-
-### Google AI Services
-
-- **Requirements**: Access to Google's AI services.
-- **Usage**: Press `Ctrl+G` to get suggestions from Google AI.
-
-## Adding New AI Backends
-
-To add a new AI backend:
-
-1. **Create a New Backend Script**: Add a new `.zsh` file in the `ai_backends/` directory.
-
-2. **Implement the Backend Function**: The script should define a `_suggest_ai_backend` function following the pattern of existing backends.
-
-3. **Update Configuration**:
-
-   - Add your API keys and settings to `config/config.zsh`.
-   - Map a key binding to your new backend in `ZSH_COPILOT_KEYS`.
+Example:
+```
+$ list files in current directory<Ctrl+Z>
+$ ls -la  # ls is the command to list files and directories
+```
 
 ## Troubleshooting
 
-- **No Suggestions**: Ensure your API keys are correctly set and that you have network connectivity.
-- **Debug Logging**: Set `ZSH_COPILOT_DEBUG=true` to enable logs at `/tmp/zsh-copilot.log`.
-- **Dependencies**: Ensure `curl` and `jq` are installed on your system.
+If you encounter any issues:
+
+1. Ensure your API key is correctly set and valid.
+2. Check that all required files are in the correct location.
+3. Enable debug logging by setting `ZSH_COPILOT_DEBUG=true` in your `~/.zshrc`.
+4. Check the log file at `/tmp/zsh-copilot.log` for error messages.
 
 ## Contributing
 
-Contributions are welcome! Please open an issue or submit a pull request on GitHub.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-## License
+## Changelog
 
-This project is licensed under the **GNU General Public License v3.0**. See the [LICENSE](LICENSE) file for details.
+### v1.0.0 (2023-09-17)
+- Initial release
+- Support for OpenAI and Ollama as AI providers
+- Customizable key binding
+- Context-aware suggestions
+- Debug logging
+- Personalized "Thinking" messages based on AI provider
 
-## Final Remarks
+### v1.0.1 (2023-09-17)
+- Fixed issue with repeated OpenAI API key warnings
+- Improved README with detailed installation and configuration instructions
+- Added changelog to README
 
-By updating the `README.md` and switching to the GNU GPLv3 license, your project now clearly communicates its features, usage instructions, and licensing terms to users and contributors.
-
-### Reminder
-
-- **API Keys**: Ensure you replace placeholder API keys with your actual keys in `config/config.zsh`. Keep these keys secure and do not commit them to a public repository.
-- **Testing**: After making changes, thoroughly test each AI backend to ensure they function as expected.
-- **Dependencies**: Make sure all required dependencies (`curl`, `jq`, etc.) are installed on your system.
-
----
-
-If you need further assistance or have additional questions, feel free to ask!
+### v1.0.2 (2023-09-17)
+- Added API key validation feature
+- Updated configuration section in README to clarify plugin settings
+- Improved troubleshooting section with API key validation information

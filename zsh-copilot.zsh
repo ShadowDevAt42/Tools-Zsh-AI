@@ -1,7 +1,8 @@
 #!/usr/bin/env zsh
-
-source "${0:A:h}/zsh-copilot-config.zsh"
-source "${0:A:h}/zsh-copilot-utils.zsh"
+SCRIPT_DIR="${0:A:h}"
+source "${SCRIPT_DIR}/zsh-copilot-config.zsh"
+source "${SCRIPT_DIR}/zsh-copilot-llm.zsh"
+source "${SCRIPT_DIR}/zsh-copilot-utils.zsh"
 
 function _suggest_ai() {
     if [[ "$ZSH_COPILOT_SEND_CONTEXT" == 'true' ]]; then
@@ -9,43 +10,32 @@ function _suggest_ai() {
             Context: You are user $(whoami) with id $(id) in directory $(pwd). 
             Your shell is $(echo $SHELL) and your terminal is $(echo $TERM) running on $(uname -a).
             $SYSTEM"
+    else
+        local PROMPT="$SYSTEM_PROMPT"
     fi
     
     local input=$(echo "${BUFFER:0:$CURSOR}" | tr '\n' ';')
     input=$(echo "$input" | sed 's/"/\\"/g')
 
     _zsh_autosuggest_clear
-    zle -R "Thinking..."
+    
+    # Personnalisation du message "Thinking" en fonction du modèle
+    if [[ "$ZSH_COPILOT_LLM_PROVIDER" == "openai" ]]; then
+        zle -R "Thinking OpenAI..."
+    elif [[ "$ZSH_COPILOT_LLM_PROVIDER" == "ollama" ]]; then
+        zle -R "Thinking Ollama..."
+    else
+        zle -R "Thinking..."
+    fi
 
     PROMPT=$(echo "$PROMPT" | tr -d '\n')
 
-    local data="{
-        \"model\": \"$ZSH_COPILOT_OLLAMA_MODEL\",
-        \"prompt\": \"$PROMPT\n\nUser: $input\nPlease provide a single command suggestion, prefixed with '=' for a new command or '+' for a completion. Do not provide explanations.\",
-        \"stream\": false
-    }"
+    local message=$(get_ai_suggestion "$input" "$PROMPT")
 
-    local response=$(curl "${ZSH_COPILOT_OLLAMA_URL}/api/generate" \
-        --silent \
-        -H "Content-Type: application/json" \
-        -d "$data")
-
-    local cleaned_response=$(echo "$response" | tr -d '\000-\037')
-    local full_message=$(echo "$cleaned_response" | jq -r '.response // empty' 2>/dev/null)
-    if [[ -z "$full_message" ]]; then
-        full_message=$(echo "$cleaned_response" | grep -oP '(?<="response":")[^"]*')
-    fi
-
-    if [[ -z "$full_message" ]]; then
-        zle -R "Error: Unable to parse AI response"
-        return 1
-    fi
-
-    local message=$(echo "$full_message" | head -n 1)
     local first_char=${message:0:1}
     local suggestion=${message:1}
     
-    debug_log "$input" "$cleaned_response" "$first_char" "$suggestion" "$data"
+    debug_log "$input" "$message" "$first_char" "$suggestion" "$PROMPT"
 
     if [[ "$first_char" == '=' ]]; then
         BUFFER=""
@@ -54,9 +44,8 @@ function _suggest_ai() {
     elif [[ "$first_char" == '+' ]]; then
         _zsh_autosuggest_suggest "$suggestion"
     else
-        BUFFER=""
-        CURSOR=0
-        zle -U "$message"
+        zle -R "Error: Invalid AI response"
+        return 1
     fi
 }
 
@@ -66,8 +55,12 @@ function zsh-copilot() {
     echo "Configurations:"
     echo "    - ZSH_COPILOT_KEY: Key to press to get suggestions (default: ^z, value: $ZSH_COPILOT_KEY)."
     echo "    - ZSH_COPILOT_SEND_CONTEXT: If \`true\`, zsh-copilot will send context information (whoami, shell, pwd, etc.) to the AI model (default: true, value: $ZSH_COPILOT_SEND_CONTEXT)."
-    echo "    - ZSH_COPILOT_OLLAMA_URL: URL of the Ollama API (default: http://localhost:11434, value: $ZSH_COPILOT_OLLAMA_URL)."
-    echo "    - ZSH_COPILOT_OLLAMA_MODEL: Ollama model to use (default: llama3, value: $ZSH_COPILOT_OLLAMA_MODEL)."
+    echo "    - ZSH_COPILOT_LLM_PROVIDER: The LLM provider to use (default: openai, value: $ZSH_COPILOT_LLM_PROVIDER)."
+    echo "    - ZSH_COPILOT_OPENAI_MODEL: The OpenAI model to use (default: gpt-4, value: $ZSH_COPILOT_OPENAI_MODEL)."
+    echo "    - ZSH_COPILOT_OLLAMA_MODEL: The Ollama model to use (default: llama3.1:8b, value: $ZSH_COPILOT_OLLAMA_MODEL)."
+    echo ""
+    echo "API Keys:"
+    echo "    - OPENAI_API_KEY: ${OPENAI_API_KEY:+Set} ${OPENAI_API_KEY:-Not Set}"
 }
 
 zle -N _suggest_ai
