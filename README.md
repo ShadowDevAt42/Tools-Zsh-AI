@@ -720,58 +720,25 @@ Assurez-vous de respecter le style de code existant et d'ajouter des tests pour 
 - Amélioration de la journalisation de débogage dans tous les fichiers du plugin
 
 ### v1.0.2 (2023-09-17)
-- Ajout de la fonction de validation des clés API
-- Mise à jour de la section configuration dans le README pour clarifier les paramètres du plugin
-- Amélioration de la section dépannage avec des informations sur la validation des clés API
+- Added API key validation feature
+- Updated configuration section in README to clarify plugin settings
+- Improved troubleshooting section with API key validation information
 
-### v1.0.1 (2023-09-17)
-- Correction du problème des avertissements répétés de la clé API OpenAI
-- Amélioration du README avec des instructions détaillées d'installation et de configuration
-- Ajout du changelog au README
+### v1.0.3 (2023-09-17)
+- Fixed "command not found: zsh_copilot_debug" error
+- Reorganized code to ensure debug function is defined before use
+- Improved debug logging across all plugin files
 
-### v1.0.0 (2023-09-17)
-- Version initiale
-- Support pour OpenAI et Ollama comme fournisseurs d'IA
-- Raccourci clavier personnalisable
-- Suggestions contextuelles
-- Journalisation de débogage
-- Messages "Thinking" personnalisés basés sur le fournisseur d'IA
+### v1.0.4 (2023-09-17)
+- Removed comments from Ollama suggestions
+- Improved handling of AI suggestions in the main script
+- Updated `get_ai_suggestion` function to clean responses
+- Enhanced debug logging for better troubleshooting
 
-## Licence
-
-Zsh Copilot est distribué sous la licence GNU General Public License version 3 (GPLv3). Voici un résumé de la licence (ce n'est pas un substitut au texte complet de la licence) :
-
-```
-Zsh Copilot - Un assistant de ligne de commande alimenté par l'IA
-Copyright (C) 2024 ShadowDev
-
-Ce programme est un logiciel libre : vous pouvez le redistribuer et/ou le modifier
-selon les termes de la GNU General Public License telle que publiée par
-la Free Software Foundation, soit la version 3 de la Licence, soit
-(à votre choix) toute version ultérieure.
-
-Ce programme est distribué dans l'espoir qu'il sera utile,
-mais SANS AUCUNE GARANTIE ; sans même la garantie implicite de
-COMMERCIALISABILITÉ ou d'ADÉQUATION À UN USAGE PARTICULIER. Voir la
-GNU General Public License pour plus de détails.
-
-Vous devriez avoir reçu une copie de la GNU General Public License
-avec ce programme. Si ce n'est pas le cas, consultez <https://www.gnu.org/licenses/>.
-```
-
-Le texte complet de la licence GPLv3 est disponible dans le fichier `LICENSE` inclus avec ce logiciel et peut également être consulté en ligne à l'adresse suivante : [https://www.gnu.org/licenses/gpl-3.0.en.html](https://www.gnu.org/licenses/gpl-3.0.en.html)
-
-### Implications de la licence GPLv3
-
-En choisissant la licence GPLv3, nous garantissons que :
-
-1. Le code source de Zsh Copilot reste ouvert et accessible à tous.
-2. Vous êtes libre d'utiliser, de modifier et de distribuer Zsh Copilot.
-3. Si vous distribuez des versions modifiées de Zsh Copilot, vous devez le faire sous la même licence (GPLv3) et fournir le code source.
-4. Toute œuvre dérivée ou logiciel qui incorpore Zsh Copilot doit également être distribué sous la licence GPLv3.
-
-Cette licence assure que Zsh Copilot et toutes ses versions dérivées resteront des logiciels libres et open source, préservant ainsi les libertés des utilisateurs.
-
----
-
-Merci d'utiliser Zsh Copilot ! Si vous appréciez ce projet, n'hésitez pas à lui donner une étoile sur GitHub et à le partager avec vos collègues développeurs. Pour toute question ou suggestion, veuillez ouvrir une issue sur le dépôt GitHub du projet.
+### v1.1.0 (2023-09-18)
+- Added support for Google Gemini API
+- Implemented Mistral API integration
+- Updated configuration options to include new AI providers
+- Enhanced API key validation to support all providers
+- Updated README with new provider information and configuration options
+- Improved error handling and debug logging for new providers
