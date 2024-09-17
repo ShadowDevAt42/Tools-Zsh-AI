@@ -37,7 +37,21 @@ function _suggest_ai() {
     _zsh_autosuggest_clear
     zsh_copilot_debug "Autosuggestions cleared"
     
-    zle -R "Thinking..."
+    if [[ "$ZSH_COPILOT_LLM_PROVIDER" == "openai" ]]; then
+ 		local LLM_INFO="OpenAI ${ZSH_COPILOT_OPENAI_MODEL}"
+	elif [[ "$ZSH_COPILOT_LLM_PROVIDER" == "ollama" ]]; then
+    	local LLM_INFO="Ollama ${ZSH_COPILOT_OLLAMA_MODEL}"
+	elif [[ "$ZSH_COPILOT_LLM_PROVIDER" == "gemini" ]]; then
+    	local LLM_INFO="Google ${ZSH_COPILOT_GEMINI_MODEL}"
+	elif [[ "$ZSH_COPILOT_LLM_PROVIDER" == "mistral" ]]; then
+    	local LLM_INFO="Mistral ${ZSH_COPILOT_MISTRAL_MODEL}"
+	elif [[ "$ZSH_COPILOT_LLM_PROVIDER" == "claude" ]]; then
+    	local LLM_INFO="Anthropic ${ZSH_COPILOT_ANTHROPIC_MODEL}"
+	else
+    	local LLM_INFO="Unknown LLM Provider"
+	fi
+
+	zle -R "Thinking... $LLM_INFO"
     zsh_copilot_debug "Using $ZSH_COPILOT_LLM_PROVIDER provider"
 
     PROMPT=$(echo "$PROMPT" | tr -d '\n')
@@ -84,27 +98,8 @@ function zsh-copilot() {
     echo "    - ZSH_COPILOT_OPENAI_MODEL: The OpenAI model to use (default: gpt-4, value: $ZSH_COPILOT_OPENAI_MODEL)."
     echo "    - ZSH_COPILOT_OLLAMA_MODEL: The Ollama model to use (default: llama3.1:8b, value: $ZSH_COPILOT_OLLAMA_MODEL)."
     echo "    - ZSH_COPILOT_GEMINI_MODEL: The Google Gemini model to use (default: gemini-1.5-flash-latest, value: $ZSH_COPILOT_GEMINI_MODEL)."
-    echo "    - ZSH_COPILOT_MISTRAL_MOfunction zsh-copilot() {
-    zsh_copilot_debug "Entering zsh-copilot function"
-    echo "ZSH Copilot is now active. Press $ZSH_COPILOT_KEY to get suggestions."
-    echo ""
-    echo "Configurations:"
-    echo "    - ZSH_COPILOT_KEY: Key to press to get suggestions (default: ^z, value: $ZSH_COPILOT_KEY)."
-    echo "    - ZSH_COPILOT_SEND_CONTEXT: If \`true\`, zsh-copilot will send context information (default: true, value: $ZSH_COPILOT_SEND_CONTEXT)."
-    echo "    - ZSH_COPILOT_LLM_PROVIDER: The LLM provider to use (default: openai, value: $ZSH_COPILOT_LLM_PROVIDER)."
-    echo "    - ZSH_COPILOT_OPENAI_MODEL: The OpenAI model to use (default: gpt-4, value: $ZSH_COPILOT_OPENAI_MODEL)."
-    echo "    - ZSH_COPILOT_OLLAMA_MODEL: The Ollama model to use (default: llama3.1:8b, value: $ZSH_COPILOT_OLLAMA_MODEL)."
-    echo "    - ZSH_COPILOT_GEMINI_MODEL: The Google Gemini model to use (default: gemini-1.5-flash-latest, value: $ZSH_COPILOT_GEMINI_MODEL)."
-    echo "    - ZSH_COPILOT_DEBUG: Debug mode (default: false, value: $ZSH_COPILOT_DEBUG)"
-    if [[ "$ZSH_COPILOT_DEBUG" == "true" ]]; then
-        echo "    - Debug log file: $ZSH_COPILOT_LOG_FILE"
-    fi
-    echo ""
-    echo "API Keys:"
-    echo "    - OPENAI_API_KEY: ${OPENAI_API_KEY:+Set} ${OPENAI_API_KEY:-Not Set}"
-    echo "    - GOOGLE_API_KEY: ${GOOGLE_API_KEY:+Set} ${GOOGLE_API_KEY:-Not Set}"
-    zsh_copilot_debug "Exiting zsh-copilot function"
-}DEL: The Mistral model to use (default: mistral-large-latest, value: $ZSH_COPILOT_MISTRAL_MODEL)."
+    echo "    - ZSH_COPILOT_MISTRAL_MODEL: The Mistral model to use (default: mistral-large-latest, value: $ZSH_COPILOT_MISTRAL_MODEL)."
+    echo "    - ZSH_COPILOT_ANTHROPIC_MODEL: The Anthropic model to use (default: claude-3-sonnet-20240229, value: $ZSH_COPILOT_ANTHROPIC_MODEL)."
     echo "    - ZSH_COPILOT_DEBUG: Debug mode (default: false, value: $ZSH_COPILOT_DEBUG)"
     if [[ "$ZSH_COPILOT_DEBUG" == "true" ]]; then
         echo "    - Debug log file: $ZSH_COPILOT_LOG_FILE"
@@ -114,6 +109,7 @@ function zsh-copilot() {
     echo "    - OPENAI_API_KEY: ${OPENAI_API_KEY:+Set} ${OPENAI_API_KEY:-Not Set}"
     echo "    - GOOGLE_API_KEY: ${GOOGLE_API_KEY:+Set} ${GOOGLE_API_KEY:-Not Set}"
     echo "    - MISTRAL_API_KEY: ${MISTRAL_API_KEY:+Set} ${MISTRAL_API_KEY:-Not Set}"
+    echo "    - CLAUDE_API_KEY: ${CLAUDE_API_KEY:+Set} ${CLAUDE_API_KEY:-Not Set}"
     zsh_copilot_debug "Exiting zsh-copilot function"
 }
 

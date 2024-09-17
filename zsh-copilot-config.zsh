@@ -27,7 +27,7 @@ zsh_copilot_debug "Log file path: $ZSH_COPILOT_LOG_FILE"
 zsh_copilot_debug "Loading configuration..."
 
 # LLM configuration
-(( ! ${+ZSH_COPILOT_LLM_PROVIDER} )) && typeset -g ZSH_COPILOT_LLM_PROVIDER="gemini"
+(( ! ${+ZSH_COPILOT_LLM_PROVIDER} )) && typeset -g ZSH_COPILOT_LLM_PROVIDER="claude"
 zsh_copilot_debug "LLM Provider: $ZSH_COPILOT_LLM_PROVIDER"
 
 # OpenAI configuration
@@ -38,7 +38,7 @@ zsh_copilot_debug "OpenAI Model: $ZSH_COPILOT_OPENAI_MODEL"
 
 # Ollama configuration
 (( ! ${+ZSH_COPILOT_OLLAMA_URL} )) && typeset -g ZSH_COPILOT_OLLAMA_URL="http://localhost:11434"
-(( ! ${+ZSH_COPILOT_OLLAMA_MODEL} )) && typeset -g ZSH_COPILOT_OLLAMA_MODEL="llama3.1:8b"
+(( ! ${+ZSH_COPILOT_OLLAMA_MODEL} )) && typeset -g ZSH_COPILOT_OLLAMA_MODEL="zsh"
 zsh_copilot_debug "Ollama URL: $ZSH_COPILOT_OLLAMA_URL"
 zsh_copilot_debug "Ollama Model: $ZSH_COPILOT_OLLAMA_MODEL"
 
@@ -141,6 +141,51 @@ if [[ "$ZSH_COPILOT_LLM_PROVIDER" == "mistral" && -z "$ZSH_COPILOT_KEY_CHECKED" 
     check_mistral_key
     export ZSH_COPILOT_KEY_CHECKED=1
     zsh_copilot_debug "API key check completed for Mistral"
+fi
+
+# Anthropic configuration
+(( ! ${+ZSH_COPILOT_ANTHROPIC_API_URL} )) && typeset -g ZSH_COPILOT_ANTHROPIC_API_URL="https://api.anthropic.com/v1"
+(( ! ${+ZSH_COPILOT_ANTHROPIC_MODEL} )) && typeset -g ZSH_COPILOT_ANTHROPIC_MODEL="claude-3-5-sonnet-20240620"
+zsh_copilot_debug "Anthropic API URL: $ZSH_COPILOT_ANTHROPIC_API_URL"
+zsh_copilot_debug "Anthropic Model: $ZSH_COPILOT_ANTHROPIC_MODEL"
+
+# API Keys check for Anthropic
+function check_anthropic_key() {
+    zsh_copilot_debug "Checking Anthropic API key"
+    if [[ -z "${CLAUDE_API_KEY}" ]]; then
+        zsh_copilot_debug "Warning: CLAUDE_API_KEY is not set"
+        echo "Warning: CLAUDE_API_KEY is not set. Anthropic integration may not work."
+    else
+        zsh_copilot_debug "CLAUDE_API_KEY is set (length: ${#CLAUDE_API_KEY})"
+        local response=$(curl -s -w "\n%{http_code}" \
+            -H "x-api-key: $CLAUDE_API_KEY" \
+            -H "anthropic-version: 2023-06-01" \
+            -H "content-type: application/json" \
+            -d '{"model":"claude-3-sonnet-20240229","max_tokens":1,"messages":[{"role":"user","content":"Test"}]}' \
+            "${ZSH_COPILOT_ANTHROPIC_API_URL}/messages")
+        
+        local http_code=$(echo "$response" | tail -n1)
+        local response_body=$(echo "$response" | sed '$d')
+        
+        zsh_copilot_debug "API response code: $http_code"
+        zsh_copilot_debug "API response body: $response_body"
+        
+        if [[ "$http_code" != "200" ]]; then
+            zsh_copilot_debug "Warning: CLAUDE_API_KEY seems to be invalid or there's a connection issue"
+            echo "Warning: CLAUDE_API_KEY seems to be invalid or there's a connection issue."
+        else
+            zsh_copilot_debug "CLAUDE_API_KEY is valid"
+            echo "CLAUDE_API_KEY is valid and working."
+        fi
+    fi
+}
+
+# Only check the API key when the plugin is loaded
+if [[ "$ZSH_COPILOT_LLM_PROVIDER" == "claude" && -z "$ZSH_COPILOT_KEY_CHECKED" ]]; then
+    zsh_copilot_debug "Initiating API key check for Anthropic"
+    check_anthropic_key
+    export ZSH_COPILOT_KEY_CHECKED=1
+    zsh_copilot_debug "API key check completed for Anthropic"
 fi
 
 # System prompt

@@ -205,8 +205,43 @@ function call_mistral_api() {
     echo "$content"
 }
 
-# Fonction get_ai_suggestion complète
+function call_anthropic_api() {
+    local input=$1
+    local prompt=$2
+    zsh_copilot_debug "Calling Anthropic API with input: $input"
 
+    if [[ -z "$CLAUDE_API_KEY" ]]; then
+        zsh_copilot_debug "Error: CLAUDE_API_KEY is not set"
+        echo "Error: CLAUDE_API_KEY is not set."
+        return 1
+    fi
+
+    local data="{
+        \"model\": \"$ZSH_COPILOT_ANTHROPIC_MODEL\",
+        \"max_tokens\": 1024,
+        \"messages\": [
+            {
+                \"role\": \"user\",
+                \"content\": \"$prompt\\n Your Search: $input\"
+            }
+        ]
+    }"
+    zsh_copilot_debug "Prepared data for Anthropic API call $data"
+
+    local response=$(curl "${ZSH_COPILOT_ANTHROPIC_API_URL}/messages" \
+        --silent \
+        -H "x-api-key: $CLAUDE_API_KEY" \
+        -H "anthropic-version: 2023-06-01" \
+        -H "Content-Type: application/json" \
+        -d "$data")
+    zsh_copilot_debug "Received response from Anthropic API $response"
+
+    local content=$(echo "$response" | jq -r '.content[0].text')
+    zsh_copilot_debug "Extracted content from Anthropic response: $content"
+    echo "$content"
+}
+
+# Update the get_ai_suggestion function
 function get_ai_suggestion() {
     local input=$1
     local prompt=$2
@@ -229,6 +264,10 @@ function get_ai_suggestion() {
         "mistral")
             zsh_copilot_debug "Using Mistral provider"
             response=$(call_mistral_api "$input" "$prompt")
+            ;;
+        "claude")
+            zsh_copilot_debug "Using Anthropic provider"
+            response=$(call_anthropic_api "$input" "$prompt")
             ;;
         *)
             zsh_copilot_debug "Error: Invalid LLM provider specified: $ZSH_COPILOT_LLM_PROVIDER"
