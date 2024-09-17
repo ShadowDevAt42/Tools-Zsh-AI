@@ -1,42 +1,79 @@
 # Configuration variables
 (( ! ${+ZSH_COPILOT_KEY} )) && typeset -g ZSH_COPILOT_KEY='^z'
 (( ! ${+ZSH_COPILOT_SEND_CONTEXT} )) && typeset -g ZSH_COPILOT_SEND_CONTEXT=true
-(( ! ${+ZSH_COPILOT_DEBUG} )) && typeset -g ZSH_COPILOT_DEBUG=false
+(( ! ${+ZSH_COPILOT_DEBUG} )) && typeset -g ZSH_COPILOT_DEBUG=true
+
+# Get the plugin directory
+ZSH_COPILOT_DIR="${0:A:h}"
+
+# Set log file path
+ZSH_COPILOT_LOG_FILE="${ZSH_COPILOT_DIR}/zsh-copilot-debug.log"
+
+# Debug function
+function zsh_copilot_debug() {
+    if [[ "$ZSH_COPILOT_DEBUG" == "true" ]]; then
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$ZSH_COPILOT_LOG_FILE"
+    fi
+}
+
+# Clear log file if debug is active
+if [[ "$ZSH_COPILOT_DEBUG" == "true" ]]; then
+    echo "" > "$ZSH_COPILOT_LOG_FILE"
+    zsh_copilot_debug "Log file cleared and debug session started."
+fi
+
+zsh_copilot_debug "Plugin directory: $ZSH_COPILOT_DIR"
+zsh_copilot_debug "Log file path: $ZSH_COPILOT_LOG_FILE"
+zsh_copilot_debug "Loading configuration..."
 
 # LLM configuration
-(( ! ${+ZSH_COPILOT_LLM_PROVIDER} )) && typeset -g ZSH_COPILOT_LLM_PROVIDER="openai"  # or "ollama"
+(( ! ${+ZSH_COPILOT_LLM_PROVIDER} )) && typeset -g ZSH_COPILOT_LLM_PROVIDER="openai"
+zsh_copilot_debug "LLM Provider: $ZSH_COPILOT_LLM_PROVIDER"
 
 # OpenAI configuration
 (( ! ${+ZSH_COPILOT_OPENAI_API_URL} )) && typeset -g ZSH_COPILOT_OPENAI_API_URL="https://api.openai.com/v1"
-(( ! ${+ZSH_COPILOT_OPENAI_MODEL} )) && typeset -g ZSH_COPILOT_OPENAI_MODEL="gpt-4o"
+(( ! ${+ZSH_COPILOT_OPENAI_MODEL} )) && typeset -g ZSH_COPILOT_OPENAI_MODEL="gpt-4"
+zsh_copilot_debug "OpenAI API URL: $ZSH_COPILOT_OPENAI_API_URL"
+zsh_copilot_debug "OpenAI Model: $ZSH_COPILOT_OPENAI_MODEL"
 
 # Ollama configuration
 (( ! ${+ZSH_COPILOT_OLLAMA_URL} )) && typeset -g ZSH_COPILOT_OLLAMA_URL="http://localhost:11434"
 (( ! ${+ZSH_COPILOT_OLLAMA_MODEL} )) && typeset -g ZSH_COPILOT_OLLAMA_MODEL="llama3.1:8b"
+zsh_copilot_debug "Ollama URL: $ZSH_COPILOT_OLLAMA_URL"
+zsh_copilot_debug "Ollama Model: $ZSH_COPILOT_OLLAMA_MODEL"
 
 # API Keys check
 function check_openai_key() {
+    zsh_copilot_debug "Checking OpenAI API key"
     if [[ -z "${OPENAI_API_KEY}" ]]; then
+        zsh_copilot_debug "Warning: OPENAI_API_KEY is not set"
         echo "Warning: OPENAI_API_KEY is not set. OpenAI integration may not work."
     else
-        # Perform a simple API call to check if the key is valid
+        zsh_copilot_debug "OPENAI_API_KEY is set (length: ${#OPENAI_API_KEY})"
         local response=$(curl -s -o /dev/null -w "%{http_code}" \
             -H "Authorization: Bearer $OPENAI_API_KEY" \
             "${ZSH_COPILOT_OPENAI_API_URL}/models")
         
+        zsh_copilot_debug "API response code: $response"
         if [[ "$response" != "200" ]]; then
+            zsh_copilot_debug "Warning: OPENAI_API_KEY seems to be invalid or there's a connection issue"
             echo "Warning: OPENAI_API_KEY seems to be invalid or there's a connection issue."
+        else
+            zsh_copilot_debug "OPENAI_API_KEY is valid"
         fi
     fi
 }
 
 # Only check the API key when the plugin is loaded
 if [[ "$ZSH_COPILOT_LLM_PROVIDER" == "openai" && -z "$ZSH_COPILOT_KEY_CHECKED" ]]; then
+    zsh_copilot_debug "Initiating API key check"
     check_openai_key
     export ZSH_COPILOT_KEY_CHECKED=1
+    zsh_copilot_debug "API key check completed"
 fi
 
 # System prompt
+zsh_copilot_debug "Loading system prompt"
 read -r -d '' SYSTEM_PROMPT <<- EOM
 You will be given the raw input of a shell command. 
 Your task is to either complete the command or provide a new command that you think the user is trying to type. 
@@ -59,3 +96,6 @@ Here are two examples:
   * User input: 'list files in current directory'; Your response: '=ls # ls is the builtin command for listing files' 
   * User input: 'cd /tm'; Your response: '+p # /tmp is the standard temp folder on linux and mac'.
 EOM
+zsh_copilot_debug "System prompt loaded"
+
+zsh_copilot_debug "Configuration loaded successfully"
