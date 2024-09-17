@@ -107,6 +107,42 @@ if [[ "$ZSH_COPILOT_LLM_PROVIDER" == "gemini" && -z "$ZSH_COPILOT_KEY_CHECKED" ]
     zsh_copilot_debug "API key check completed for Google Gemini"
 fi
 
+# Mistral configuration
+(( ! ${+ZSH_COPILOT_MISTRAL_API_URL} )) && typeset -g ZSH_COPILOT_MISTRAL_API_URL="https://api.mistral.ai/v1"
+(( ! ${+ZSH_COPILOT_MISTRAL_MODEL} )) && typeset -g ZSH_COPILOT_MISTRAL_MODEL="mistral-large-latest"
+zsh_copilot_debug "Mistral API URL: $ZSH_COPILOT_MISTRAL_API_URL"
+zsh_copilot_debug "Mistral Model: $ZSH_COPILOT_MISTRAL_MODEL"
+
+# API Keys check for Mistral
+function check_mistral_key() {
+    zsh_copilot_debug "Checking Mistral API key"
+    if [[ -z "${MISTRAL_API_KEY}" ]]; then
+        zsh_copilot_debug "Warning: MISTRAL_API_KEY is not set"
+        echo "Warning: MISTRAL_API_KEY is not set. Mistral integration may not work."
+    else
+        zsh_copilot_debug "MISTRAL_API_KEY is set (length: ${#MISTRAL_API_KEY})"
+        local response=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer $MISTRAL_API_KEY" \
+            "${ZSH_COPILOT_MISTRAL_API_URL}/models")
+        
+        zsh_copilot_debug "API response code: $response"
+        if [[ "$response" != "200" ]]; then
+            zsh_copilot_debug "Warning: MISTRAL_API_KEY seems to be invalid or there's a connection issue"
+            echo "Warning: MISTRAL_API_KEY seems to be invalid or there's a connection issue."
+        else
+            zsh_copilot_debug "MISTRAL_API_KEY is valid"
+        fi
+    fi
+}
+
+# Only check the API key when the plugin is loaded
+if [[ "$ZSH_COPILOT_LLM_PROVIDER" == "mistral" && -z "$ZSH_COPILOT_KEY_CHECKED" ]]; then
+    zsh_copilot_debug "Initiating API key check for Mistral"
+    check_mistral_key
+    export ZSH_COPILOT_KEY_CHECKED=1
+    zsh_copilot_debug "API key check completed for Mistral"
+fi
+
 # System prompt
 zsh_copilot_debug "Loading system prompt"
 read -r -d '' SYSTEM_PROMPT <<- EOM

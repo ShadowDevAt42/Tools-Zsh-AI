@@ -167,6 +167,44 @@ function call_gemini_api() {
     parse_gemini_response "$response"
 }
 
+function call_mistral_api() {
+    local input=$1
+    local prompt=$2
+    zsh_copilot_debug "Calling Mistral API with input: $input"
+
+    if [[ -z "$MISTRAL_API_KEY" ]]; then
+        zsh_copilot_debug "Error: MISTRAL_API_KEY is not set"
+        echo "Error: MISTRAL_API_KEY is not set."
+        return 1
+    fi
+
+    local data="{
+        \"model\": \"$ZSH_COPILOT_MISTRAL_MODEL\",
+        \"messages\": [
+            {
+                \"role\": \"system\",
+                \"content\": \"$prompt\"
+            },
+            {
+                \"role\": \"user\",
+                \"content\": \"$input\"
+            }
+        ]
+    }"
+    zsh_copilot_debug "Prepared data for Mistral API call"
+
+    local response=$(curl "${ZSH_COPILOT_MISTRAL_API_URL}/chat/completions" \
+        --silent \
+        -H "Content-Type: application/json" \
+        -H "Authorization: Bearer $MISTRAL_API_KEY" \
+        -d "$data")
+    zsh_copilot_debug "Received response from Mistral API"
+
+    local content=$(echo "$response" | jq -r '.choices[0].message.content')
+    zsh_copilot_debug "Extracted content from Mistral response: $content"
+    echo "$content"
+}
+
 # Fonction get_ai_suggestion complète
 
 function get_ai_suggestion() {
@@ -187,6 +225,10 @@ function get_ai_suggestion() {
         "gemini")
             zsh_copilot_debug "Using Google Gemini provider"
             response=$(call_gemini_api "$input" "$prompt")
+            ;;
+        "mistral")
+            zsh_copilot_debug "Using Mistral provider"
+            response=$(call_mistral_api "$input" "$prompt")
             ;;
         *)
             zsh_copilot_debug "Error: Invalid LLM provider specified: $ZSH_COPILOT_LLM_PROVIDER"
