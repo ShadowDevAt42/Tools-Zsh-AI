@@ -27,7 +27,7 @@ zsh_copilot_debug "Log file path: $ZSH_COPILOT_LOG_FILE"
 zsh_copilot_debug "Loading configuration..."
 
 # LLM configuration
-(( ! ${+ZSH_COPILOT_LLM_PROVIDER} )) && typeset -g ZSH_COPILOT_LLM_PROVIDER="openai"
+(( ! ${+ZSH_COPILOT_LLM_PROVIDER} )) && typeset -g ZSH_COPILOT_LLM_PROVIDER="gemini"
 zsh_copilot_debug "LLM Provider: $ZSH_COPILOT_LLM_PROVIDER"
 
 # OpenAI configuration
@@ -70,6 +70,41 @@ if [[ "$ZSH_COPILOT_LLM_PROVIDER" == "openai" && -z "$ZSH_COPILOT_KEY_CHECKED" ]
     check_openai_key
     export ZSH_COPILOT_KEY_CHECKED=1
     zsh_copilot_debug "API key check completed"
+fi
+
+# Google Gemini configuration
+(( ! ${+ZSH_COPILOT_GEMINI_API_URL} )) && typeset -g ZSH_COPILOT_GEMINI_API_URL="https://generativelanguage.googleapis.com/v1beta"
+(( ! ${+ZSH_COPILOT_GEMINI_MODEL} )) && typeset -g ZSH_COPILOT_GEMINI_MODEL="gemini-1.5-pro"
+zsh_copilot_debug "Google Gemini API URL: $ZSH_COPILOT_GEMINI_API_URL"
+zsh_copilot_debug "Google Gemini Model: $ZSH_COPILOT_GEMINI_MODEL"
+
+# API Keys check
+function check_gemini_key() {
+    zsh_copilot_debug "Checking Google Gemini API key"
+    if [[ -z "${GOOGLE_API_KEY}" ]]; then
+        zsh_copilot_debug "Warning: GOOGLE_API_KEY is not set"
+        echo "Warning: GOOGLE_API_KEY is not set. Google Gemini integration may not work."
+    else
+        zsh_copilot_debug "GOOGLE_API_KEY is set (length: ${#GOOGLE_API_KEY})"
+        local response=$(curl -s -o /dev/null -w "%{http_code}" \
+            "${ZSH_COPILOT_GEMINI_API_URL}/models?key=$GOOGLE_API_KEY")
+        
+        zsh_copilot_debug "API response code: $response"
+        if [[ "$response" != "200" ]]; then
+            zsh_copilot_debug "Warning: GOOGLE_API_KEY seems to be invalid or there's a connection issue"
+            echo "Warning: GOOGLE_API_KEY seems to be invalid or there's a connection issue."
+        else
+            zsh_copilot_debug "GOOGLE_API_KEY is valid"
+        fi
+    fi
+}
+
+# Only check the API key when the plugin is loaded
+if [[ "$ZSH_COPILOT_LLM_PROVIDER" == "gemini" && -z "$ZSH_COPILOT_KEY_CHECKED" ]]; then
+    zsh_copilot_debug "Initiating API key check for Google Gemini"
+    check_gemini_key
+    export ZSH_COPILOT_KEY_CHECKED=1
+    zsh_copilot_debug "API key check completed for Google Gemini"
 fi
 
 # System prompt

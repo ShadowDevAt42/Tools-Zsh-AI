@@ -139,3 +139,14 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 - Added API key validation feature
 - Updated configuration section in README to clarify plugin settings
 - Improved troubleshooting section with API key validation information
+
+### v1.0.3 (2023-09-17)
+- Fixed "command not found: zsh_copilot_debug" error
+- Reorganized code to ensure debug function is defined before use
+- Improved debug logging across all plugin files
+
+### v1.0.4 (2023-09-17)
+- Removed comments from Ollama suggestions
+- Improved handling of AI suggestions in the main script
+- Updated `get_ai_suggestion` function to clean responses
+- Enhanced debug logging for better troubleshooting

@@ -37,21 +37,20 @@ function _suggest_ai() {
     _zsh_autosuggest_clear
     zsh_copilot_debug "Autosuggestions cleared"
     
-    if [[ "$ZSH_COPILOT_LLM_PROVIDER" == "openai" ]]; then
-        zle -R "Thinking OpenAI..."
-        zsh_copilot_debug "Using OpenAI provider"
-    elif [[ "$ZSH_COPILOT_LLM_PROVIDER" == "ollama" ]]; then
-        zle -R "Thinking Ollama..."
-        zsh_copilot_debug "Using Ollama provider"
-    else
-        zle -R "Thinking..."
-        zsh_copilot_debug "Using unknown provider"
-    fi
+    zle -R "Thinking..."
+    zsh_copilot_debug "Using $ZSH_COPILOT_LLM_PROVIDER provider"
 
     PROMPT=$(echo "$PROMPT" | tr -d '\n')
     zsh_copilot_debug "Final prompt prepared"
 
     local message=$(get_ai_suggestion "$input" "$PROMPT")
+    
+    if [[ $? -ne 0 ]]; then
+        zsh_copilot_debug "Error occurred in get_ai_suggestion"
+        zle -R "Error: Failed to get AI suggestion"
+        return 1
+    fi
+
     zsh_copilot_debug "AI suggestion received: $message"
 
     local first_char=${message:0:1}
@@ -84,6 +83,7 @@ function zsh-copilot() {
     echo "    - ZSH_COPILOT_LLM_PROVIDER: The LLM provider to use (default: openai, value: $ZSH_COPILOT_LLM_PROVIDER)."
     echo "    - ZSH_COPILOT_OPENAI_MODEL: The OpenAI model to use (default: gpt-4, value: $ZSH_COPILOT_OPENAI_MODEL)."
     echo "    - ZSH_COPILOT_OLLAMA_MODEL: The Ollama model to use (default: llama3.1:8b, value: $ZSH_COPILOT_OLLAMA_MODEL)."
+    echo "    - ZSH_COPILOT_GEMINI_MODEL: The Google Gemini model to use (default: gemini-1.5-flash-latest, value: $ZSH_COPILOT_GEMINI_MODEL)."
     echo "    - ZSH_COPILOT_DEBUG: Debug mode (default: false, value: $ZSH_COPILOT_DEBUG)"
     if [[ "$ZSH_COPILOT_DEBUG" == "true" ]]; then
         echo "    - Debug log file: $ZSH_COPILOT_LOG_FILE"
@@ -91,6 +91,7 @@ function zsh-copilot() {
     echo ""
     echo "API Keys:"
     echo "    - OPENAI_API_KEY: ${OPENAI_API_KEY:+Set} ${OPENAI_API_KEY:-Not Set}"
+    echo "    - GOOGLE_API_KEY: ${GOOGLE_API_KEY:+Set} ${GOOGLE_API_KEY:-Not Set}"
     zsh_copilot_debug "Exiting zsh-copilot function"
 }
 
