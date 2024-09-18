@@ -7,13 +7,8 @@ from task_handler import TaskHandler
 
 async def main():
     config = get_config()
-
-    print("Variables d'environnement :")
-    for key, value in os.environ.items():
-        print(f"{key}: {value}")
-
     logger = get_logger(config)
-    task_handler = TaskHandler(logger)
+    task_handler = TaskHandler(config, logger)
     socket_server = UnixSocketServer(config['SOCK_PATH'], task_handler, logger)
 
     logger.info("Starting orchestrator...")

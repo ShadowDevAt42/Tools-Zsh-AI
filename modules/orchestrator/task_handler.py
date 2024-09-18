@@ -1,8 +1,19 @@
-import subprocess
+import os
+import sys
+
+# Ajoutez le chemin du module LLM au sys.path
+module_dir = os.environ.get('MODULE_DIR')
+if module_dir:
+    llm_module_path = os.path.join(module_dir, 'llm')
+    sys.path.append(llm_module_path)
+
+from llm_handler import LLMHandler
 
 class TaskHandler:
-    def __init__(self, logger):
+    def __init__(self, config, logger):
         self.logger = logger
+        self.config = config
+        self.llm_handler = LLMHandler(config, logger)
 
     async def handle_task(self, task):
         self.logger.debug(f"Handling task: {task}")
@@ -11,6 +22,9 @@ class TaskHandler:
         elif task.startswith("EXECUTE:"):
             command = task.split(":", 1)[1]
             return await self.execute_command(command)
+        elif task.startswith("LLM:"):
+            user_input = task.split(":", 1)[1]
+            return await self.llm_handler.process_input(user_input)
         else:
             return "Unknown command"
 

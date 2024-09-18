@@ -6,6 +6,10 @@ APP_NAME="ZSH Copilot"
 # Version
 APP_VERSION="1.1.0"
 
+#LLM configs
+OLLAMA_URL="http://localhost:11434"
+OLLAMA_MODEL="llama3.1:8b"
+
 # Paths
 ROOT_DIR="${0:A:h:h}"
 ORCHE_DIR="${ROOT_DIR}/modules/orchestrator"
@@ -38,3 +42,4 @@ fi
 # Export variables so they're available in sourced scripts
 export APP_NAME APP_VERSION ROOT_DIR CACHE_DIR LOG_DIR MODULE_DIR CONFIG_DIR LOG_FILE ORCHE_DIR SOCK_PATH
 export LOG_LEVEL MAX_LOG_SIZE DEFAULT_PROMPT MAX_HISTORY_ITEMS CACHE_EXPIRY
+export OLLAMA_URL OLLAMA_MODEL

@@ -8,6 +8,7 @@ source "${MODULE_DIR}/log.zsh"
 source "${MODULE_DIR}/error_handling.zsh"
 source "${MODULE_DIR}/core.zsh"
 source "${ROOT_DIR}/dependencies.zsh"
+source "${MODULE_DIR}/llm/llm.zsh"
 
 # Function to run all initialization steps
 initialize_application() {
