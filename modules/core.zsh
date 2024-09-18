@@ -13,8 +13,14 @@ initialize_core() {
 
     # Initialize user data
     initialize_user
-
-    # Any additional core initialization steps can be added here
+	if load_env; then
+    	log_info "Environment setup completed successfully"
+	else
+    	log_warning "Environment setup completed with warnings. Check the logs for details."
+	fi
+	# Lancer l'orchestrateur Python en arrière-plan
+	python3 "${ORCHE_DIR}/main.py" &
+    send_to_orchestrator "PING"# Any additional core initialization steps can be added here
     # For example:
     # - Setting up environment variables
     # - Initializing database connections

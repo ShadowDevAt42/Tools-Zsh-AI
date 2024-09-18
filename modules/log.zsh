@@ -29,9 +29,10 @@ log_message() {
     local message=$2
     local color=$3
     local timestamp=$(date +"%Y-%m-%d %H:%M:%S")
+    local flag="{ZSH}"
 
     # Write the colored log entry to the log file
-    echo -e "${color}[$timestamp] [$log_level] $message${NC}" >> "$LOG_FILE"
+    echo -e "${color}[$timestamp] [$log_level] $flag $message${NC}" >> "$LOG_FILE"
 }
 
 log_info() {

@@ -4,10 +4,12 @@
 APP_NAME="ZSH Copilot"
 
 # Version
-APP_VERSION="1.0.0"
+APP_VERSION="1.1.0"
 
 # Paths
-ROOT_DIR="${0:A:h:h}"  # Go up one level to get the root directory
+ROOT_DIR="${0:A:h:h}"
+ORCHE_DIR="${ROOT_DIR}/modules/orchestrator"
+SOCK_PATH="${ROOT_DIR}/orchestrator.sock"
 CACHE_DIR="${ROOT_DIR}/cache/.zsh_copilot_cache"
 LOG_DIR="${ROOT_DIR}/logs"
 MODULE_DIR="${ROOT_DIR}/modules"
@@ -34,5 +36,5 @@ if [[ -f "${CONFIG_DIR}/env.zsh" ]]; then
 fi
 
 # Export variables so they're available in sourced scripts
-export APP_NAME APP_VERSION ROOT_DIR CACHE_DIR LOG_DIR MODULE_DIR CONFIG_DIR LOG_FILE
+export APP_NAME APP_VERSION ROOT_DIR CACHE_DIR LOG_DIR MODULE_DIR CONFIG_DIR LOG_FILE ORCHE_DIR SOCK_PATH
 export LOG_LEVEL MAX_LOG_SIZE DEFAULT_PROMPT MAX_HISTORY_ITEMS CACHE_EXPIRY

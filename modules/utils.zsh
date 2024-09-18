@@ -28,3 +28,8 @@ get_system_info() {
     esac
     echo "$system_info"
 }
+
+send_to_orchestrator() {
+    local message="$1"
+    echo "$message" | nc -U "${SOCKET_PATH}"
+}
