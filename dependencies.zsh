@@ -5,6 +5,7 @@ REQUIRED_COMMANDS=(
     "curl"
     "jq"
     "git"
+	"nc"
 )
 
 # Function to check if a command is available

@@ -1,5 +1,6 @@
 import os
 import sys
+import subprocess
 
 # Ajoutez le chemin du module LLM au sys.path
 module_dir = os.environ.get('MODULE_DIR')
