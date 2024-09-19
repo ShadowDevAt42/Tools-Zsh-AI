@@ -1,12 +1,7 @@
 #!/bin/zsh
 # File: module/llm/llm.zsh
+# Description: Script to handle Ctrl+Z key binding in Zsh with a simple "Thinking..." message replacing user input.
 
-# Description:
-# Script to handle Ctrl+Z key binding in Zsh.
-# When Ctrl+Z is pressed, it sends the current command buffer to the orchestrator
-# and replaces the buffer with the result.
-
-# Source necessary modules
 source "${MODULE_DIR}/log.zsh"
 source "${MODULE_DIR}/utils.zsh"
 source "${MODULE_DIR}/error_handling.zsh"
@@ -14,53 +9,58 @@ source "${MODULE_DIR}/security.zsh"
 
 # Function to handle Ctrl+Z
 handle_ctrl_z() {
-    # Handles the Ctrl+Z key binding.
-    #
-    # This function is triggered when Ctrl+Z is pressed in the Zsh shell.
-    # It processes the current command buffer, sends it to the orchestrator
-    # for processing (if not empty), and updates the buffer with the result.
-    #
-    # Global variables:
-    #   BUFFER - The current command line buffer in Zsh
-    #
-    # Side effects:
-    #   - Modifies the BUFFER variable
-    #   - Triggers a redisplay of the Zsh line editor
-    #   - Logs debug information
-    #
-    # Returns:
-    #   None
-
     log_debug_ex "Entering handle_ctrl_z function"
-
     if [[ -n $BUFFER ]]; then
         log_debug "Ctrl+Z pressed with buffer content: '$BUFFER'"
-        log_debug_ex "Sending buffer content to orchestrator for processing."
 
-        # Sanitize the input before sending
-        # local sanitized_input=$(sanitize_input "$BUFFER")
-        # log_debug_ex "Sanitized input: '$sanitized_input'"
+        # Save the current buffer and cursor position
+        local saved_buffer=$BUFFER
+        local saved_cursor=$CURSOR
+
+        # Clear the suggestion and replace the current input with the "Thinking..." message
+        _zsh_autosuggest_clear
+
+        # Calculate number of lines for the user input
+        local lines_count=$(((${#BUFFER} + $COLUMNS - 1) / $COLUMNS))
+        
+        # Build the "Thinking..." message
+        local model_name="$OLLAMA_MODEL"
+        local thinking_message="LLM $model_name Thinking..."
+
+       # Clear the user input from the screen
+        BUFFER=""  # Clear BUFFER to prevent conflicts with zle redisplay
+        for ((i=0; i<lines_count; i++)); do
+            zle -R ""  # Clear each line of the original input
+        done
+
+        # Move cursor to the beginning of the line and display the "Thinking..." message
+        echo -ne "\r\033[K$thinking_message"
 
         # Send the input to the orchestrator
         log_debug_ex "Calling send_to_orchestrator with LLM prefix"
-        local result=$(send_to_orchestrator "LLM:$BUFFER")
-        log_debug_ex "Received result from orchestrator: '$result'"
+        local result=$(send_to_orchestrator "LLM:$saved_buffer")
 
+        # Restore the prompt
+        zle -R ""  # Clear the "Thinking..." message
+
+        log_debug_ex "Received result from orchestrator: '$result'"
         if [[ -n $result ]]; then
             log_debug_ex "Updating BUFFER with orchestrator result"
             BUFFER="$result"
-            log_debug_ex "Triggering Zsh line editor redisplay"
-            zle redisplay
-            log_debug_ex "Command buffer updated with orchestrator result."
+            CURSOR=${#BUFFER}
         else
             log_warning "No result received from orchestrator."
-            log_debug_ex "BUFFER remains unchanged due to empty result"
+            BUFFER="$saved_buffer"
+            CURSOR=$saved_cursor
         fi
+
+        log_debug_ex "Triggering Zsh line editor redisplay"
+        zle reset-prompt
+        zle redisplay
     else
         log_debug "Ctrl+Z pressed with empty buffer."
         log_debug_ex "No action taken for empty buffer"
     fi
-
     log_debug_ex "Exiting handle_ctrl_z function"
 }
 

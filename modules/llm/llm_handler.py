@@ -1,6 +1,7 @@
 import json
 import aiohttp
 import asyncio
+import shutil
 
 class LLMHandler:
     def __init__(self, config, logger):
@@ -50,7 +51,6 @@ Please provide a single command suggestion, prefixed with "=" for a new command 
             "stream": False
         }
         
-        animation_task = asyncio.create_task(self.animate_thinking())
         
         async with aiohttp.ClientSession() as session:
             async with session.post(f"{self.ollama_url}/api/generate", json=data) as response:
@@ -58,25 +58,10 @@ Please provide a single command suggestion, prefixed with "=" for a new command 
                     result = await response.json()
                     content = result.get('response', '')
                     self.logger.debug(f"Extracted content from Ollama response: {content[:50]}...")
-                    animation_task.cancel()
-                    print("\r" + " " * 50 + "\r", end="", flush=True)  # Clear the animation line
                     return content
                 else:
                     self.logger.error(f"Error from Ollama API: {response.status}")
-                    animation_task.cancel()
-                    print("\r" + " " * 50 + "\r", end="", flush=True)  # Clear the animation line
                     return None
-
-    async def animate_thinking(self):
-        animation = ["c", "C"]
-        i = 0
-        try:
-            while True:
-                print(f"\rLLM {self.ollama_model} Thinking {''.join(animation[i % 2] for _ in range(10))}", end="", flush=True)
-                i += 1
-                await asyncio.sleep(0.1)
-        except asyncio.CancelledError:
-            pass
 
     def parse_llm_response(self, llm_response):
         if not llm_response:
