@@ -27,8 +27,6 @@ initialize_application() {
     # Returns:
     #   0 if initialization succeeds, 1 otherwise.
 
-    log_info "Initializing application..."
-
     # Initialize the logging system
     initialize_logs
     log_success "Logging system initialized successfully."
@@ -37,11 +35,11 @@ initialize_application() {
 
     log_info "Starting application initialization process..."
     log_debug_ex "Beginning application initialization sequence."
-
+	log_info "Starting dependencies check process..."
     # Check for required dependencies
     if ! check_dependencies; then
         local missing_deps=$(get_missing_dependencies)
-        handle_error $E_GENERAL "Failed to satisfy all dependencies. Missing: $missing_deps"
+        handle_error $E_GENERAL "Failed to satisfy all dependencies."
         log_error "Missing dependencies: $missing_deps"
         echo "Error: Some dependencies are missing. Please install: $missing_deps"
         exit 1

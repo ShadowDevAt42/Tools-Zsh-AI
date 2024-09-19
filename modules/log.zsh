@@ -62,23 +62,18 @@ initialize_logs() {
 
     if [[ ! -d "$LOG_DIR" ]]; then
         mkdir -p "$LOG_DIR"
-        log_info "Log directory created at $LOG_DIR."
-        log_debug_ex "Log directory path: $LOG_DIR"
     else
-        log_info "Log directory found at $LOG_DIR."
-        log_debug_ex "Log directory already exists at path: $LOG_DIR"
     fi
 
     if [[ -f "$LOG_FILE" ]]; then
         : > "$LOG_FILE" # Truncate existing log file
-        log_info "Existing log file truncated at $LOG_FILE."
+        log_debug "Existing log file truncated at $LOG_FILE."
         log_debug_ex "Log file truncated: $LOG_FILE"
     else
         touch "$LOG_FILE"
-        log_info "Log file created at $LOG_FILE."
+        log_debug "Log file created at $LOG_FILE."
         log_debug_ex "Log file created at path: $LOG_FILE"
     fi
-    log_info "Logging system initialized successfully."
 }
 
 # Function to log a message with a specific level

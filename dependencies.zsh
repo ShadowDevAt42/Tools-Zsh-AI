@@ -42,6 +42,3 @@ get_missing_dependencies() {
     done
     echo $missing
 }
-
-# Don't run the check here, let main.zsh control the flow
-# check_dependencies

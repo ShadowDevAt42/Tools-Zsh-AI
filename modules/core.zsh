@@ -26,14 +26,16 @@ initialize_core() {
     log_info "Initializing application core..."
     log_debug_ex "Starting core initialization."
 
+	log_info "Starting user initialization process..."
+
     # Initialize user data
     initialize_user
-    log_info "User data initialized."
+    log_success "User data initialized."
 
+	log_info "Starting env install process..."
     # Load environment variables
     if load_env; then
-        log_info "Environment setup completed successfully."
-        log_debug_ex "Environment variables loaded from .env file."
+        log_success "Environment setup completed successfully."
     else
         log_warning "Environment setup completed with warnings. Check the logs for details."
     fi

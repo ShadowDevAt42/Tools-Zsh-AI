@@ -9,8 +9,31 @@ async def main():
     """
     The main entry point for the Orchestrator module.
 
-    Initializes configurations, logger, task handler, and Unix socket server.
-    Starts the Unix socket server to listen for incoming connections.
+    This asynchronous function performs the following tasks:
+    1. Loads the configuration settings.
+    2. Initializes the logger with the loaded configuration.
+    3. Creates a TaskHandler instance to manage incoming tasks.
+    4. Sets up a UnixSocketServer to handle client connections.
+    5. Starts the UnixSocketServer and keeps it running.
+
+    The function orchestrates the setup and execution of the main components
+    of the Orchestrator module, ensuring proper initialization and startup sequence.
+    It also handles logging of key events during the startup process.
+
+    Workflow:
+    - Configuration loading
+    - Logger initialization
+    - TaskHandler creation
+    - UnixSocketServer setup
+    - Server start and run
+
+    Error Handling:
+    - Any exceptions during startup will be logged and may cause the program to terminate.
+
+    Note:
+    This function is designed to be run as the main entry point of the script.
+    It utilizes asyncio for asynchronous operation, allowing for efficient handling
+    of multiple connections and tasks.
     """
     # Load configurations
     config = get_config()

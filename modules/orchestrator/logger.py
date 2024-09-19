@@ -6,6 +6,19 @@ from datetime import datetime
 class LogLevel(Enum):
     """
     Enum representing different logging levels with associated color codes and numeric values.
+    
+    Each log level is defined as a tuple containing:
+    - Color code (string): ANSI escape sequence for console color output
+    - Level name (string): Textual representation of the log level
+    - Numeric value (int): Integer value for log level comparison and filtering
+    
+    Available log levels:
+    - ERROR: Critical errors that may cause program termination
+    - WARNING: Potential issues that don't prevent program execution
+    - INFO: General information about program execution
+    - SUCCESS: Successful completion of important operations
+    - DEBUG: Detailed information for debugging purposes
+    - DEBUG_EX: Extended debugging information with extra details
     """
     ERROR = ('\033[0;31m', 'ERROR', 1)
     WARNING = ('\033[38;5;208m', 'WARNING', 2)
@@ -17,20 +30,33 @@ class LogLevel(Enum):
 class ZshCompatibleLogger:
     """
     Custom logger compatible with Zsh's logging format.
-
+    
+    This logger provides methods for logging messages at different severity levels,
+    with color-coded output and timestamps. It writes logs to a specified file and
+    filters messages based on the current log level.
+    
     Attributes:
-        log_file (str): Path to the log file.
-        flag (str): Identifier for the logger.
-        NC (str): No Color escape code.
-        current_log_level (int): Numeric value of the current log level for filtering.
+        log_file (str): Path to the log file where messages are written.
+        flag (str): Identifier for the logger, appended to each log message.
+        NC (str): ANSI escape sequence to reset text color.
+        current_log_level (int): Numeric value of the current log level for filtering messages.
+    
+    Methods:
+        debug, debug_ex, info, success, warning, error: Log messages at respective levels.
+        _log_message: Internal method to format and write log entries.
+        get_log_level_value: Convert log level names to their numeric values.
     """
     def __init__(self, log_file, log_level="DEBUG_EX"):
         """
-        Initializes the ZshCompatibleLogger.
-
+        Initialize the ZshCompatibleLogger.
+        
         Args:
-            log_file (str): Path to the log file where logs will be written.
-            log_level (str): The minimum severity level to log (e.g., DEBUG_EX, DEBUG, INFO, etc.).
+            log_file (str): Path to the file where logs will be written.
+            log_level (str): The minimum severity level to log (default: "DEBUG_EX").
+                             Only messages at this level and higher will be logged.
+        
+        The logger is set up with the specified log file and level. It creates
+        the log directory if it doesn't exist and initializes internal attributes.
         """
         self.log_file = log_file
         self.flag = "{ORCHESTRATOR}"
@@ -39,13 +65,17 @@ class ZshCompatibleLogger:
 
     def get_log_level_value(self, level_name):
         """
-        Maps log level names to numeric values.
-
+        Map log level names to their corresponding numeric values.
+        
         Args:
-            level_name (str): The name of the log level.
-
+            level_name (str): The name of the log level (e.g., "DEBUG", "INFO").
+        
         Returns:
             int: The numeric value corresponding to the log level.
+                 Returns 0 for undefined or unknown log levels.
+        
+        This method allows for dynamic filtering of log messages based on
+        their severity level.
         """
         for level in LogLevel:
             if level.name == level_name:
@@ -54,11 +84,15 @@ class ZshCompatibleLogger:
 
     def _log_message(self, level: LogLevel, message: str):
         """
-        Logs a message with a specific severity level and color.
-
+        Format and write a log message to the log file.
+        
         Args:
-            level (LogLevel): The severity level of the log.
-            message (str): The message to log.
+            level (LogLevel): The severity level of the log message.
+            message (str): The content of the log message.
+        
+        This internal method handles the actual writing of log entries. It
+        applies color coding, adds timestamps, and filters messages based on
+        the current log level. Messages are appended to the log file.
         """
         color, level_str, level_num = level.value
         if level_num <= self.current_log_level:
@@ -70,71 +104,88 @@ class ZshCompatibleLogger:
 
     def debug(self, message):
         """
-        Logs a debug message.
-
+        Log a debug message.
+        
         Args:
             message (str): The debug message to log.
+        
+        Logs detailed information useful for debugging purposes.
         """
         self._log_message(LogLevel.DEBUG, message)
 
     def debug_ex(self, message):
         """
-        Logs an extended debug message with detailed information.
-
+        Log an extended debug message with extra details.
+        
         Args:
             message (str): The extended debug message to log.
+        
+        Used for logging highly detailed debug information, including stack traces,
+        variable states, or complex operations' intermediate results.
         """
         extended_message = f"DEBUG_EX: {message}"
         self._log_message(LogLevel.DEBUG_EX, extended_message)
 
     def info(self, message):
         """
-        Logs an informational message.
-
+        Log an informational message.
+        
         Args:
             message (str): The informational message to log.
+        
+        Used for general information about the program's execution state.
         """
         self._log_message(LogLevel.INFO, message)
 
     def success(self, message):
         """
-        Logs a success message indicating successful completion of an operation.
-
+        Log a success message.
+        
         Args:
             message (str): The success message to log.
+        
+        Indicates successful completion of important operations or milestones.
         """
         self._log_message(LogLevel.SUCCESS, message)
 
     def warning(self, message):
         """
-        Logs a warning message.
-
+        Log a warning message.
+        
         Args:
             message (str): The warning message to log.
+        
+        Used for potentially problematic situations that don't prevent program execution.
         """
         self._log_message(LogLevel.WARNING, message)
 
     def error(self, message):
         """
-        Logs an error message.
-
+        Log an error message.
+        
         Args:
             message (str): The error message to log.
+        
+        Used for critical errors that may lead to program malfunction or termination.
         """
         self._log_message(LogLevel.ERROR, message)
 
 def get_logger(config):
     """
-    Initializes and returns a ZshCompatibleLogger instance.
-
+    Initialize and return a ZshCompatibleLogger instance.
+    
     Args:
         config (dict): Configuration dictionary containing 'LOG_FILE' path and 'LOG_LEVEL'.
-
+    
     Returns:
-        ZshCompatibleLogger: An instance of the custom logger.
+        ZshCompatibleLogger: An instance of the custom logger, configured and ready to use.
     
     Raises:
         ValueError: If 'LOG_FILE' is not found in the configuration.
+    
+    This function sets up the logging environment, creates necessary directories,
+    and initializes the logger with the specified configuration. It also logs
+    initial messages to confirm successful logger setup.
     """
     log_file = config.get('LOG_FILE')
     if not log_file:

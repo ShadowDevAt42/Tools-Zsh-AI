@@ -158,7 +158,7 @@ load_env() {
                 continue
             fi
             export "$key=$value"
-            log_debug "Exported environment variable: $key=$value"
+            log_debug "Exported environment variable: $key"
             ((env_vars_loaded++))
         fi
     done < "$env_file"
