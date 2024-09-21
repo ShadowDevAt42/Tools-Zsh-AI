@@ -742,3 +742,13 @@ Assurez-vous de respecter le style de code existant et d'ajouter des tests pour 
 - Enhanced API key validation to support all providers
 - Updated README with new provider information and configuration options
 - Improved error handling and debug logging for new providers
+
+
+curl -X POST "http://localhost:5678/webhook-test/NuxAgent?userSystem=Arch-Linux&userInput=j+aimeraisune+commande+pour+cree+un+dossier+test/+et+cree+dans+ce+dossier+des+dossiers+allant+de+ex01+a+ex0b" \
+-H "Content-Type: application/json" \
+-d '{
+  "userSystem":"Arch-Linux",
+  "userInput": "j aimerais une commande pour cree un dossier test/ et cree dans ce dossier des dossiers allant de ex01 a ex05"
+}'
+
+http://localhost:5678/webhook-test/NuxAgent?userSystem=Arch-Linux&userInput=j+aimeraisune+commande+pour+cree+un+dossier+test/+et+cree+dans+ce+dossier+des+dossiers+allant+de+ex01+a+ex0

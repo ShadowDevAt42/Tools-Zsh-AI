@@ -1,0 +1,17 @@
+curl -X POST "http://localhost:5678/webhook-test/hostApi" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workflowRoad": {
+      "workflow": "tools",
+      "function": "cmdZsh"
+    },
+    "config": {
+      "method": "llm",
+      "llmUse": "ollama,gemini,mistral,openai,claude",
+      "llmModelUse": "llama3.1:8b,gemini-1.5-flash"
+    },
+    "userInput": {
+      "userMessage": "j aimerais une commande pour entrer dans un container docker qui s appelle ollama et j aimerais entrer en bash",
+      "userSystem": "Arch-Linux"
+    }
+  }'
