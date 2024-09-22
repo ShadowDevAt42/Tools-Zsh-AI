@@ -73,9 +73,39 @@ compare_and_update_cache() {
     fi
 }
 # Function to handle Ctrl+Z
+# Function to handle Ctrl+Z
 handle_ctrl_z() {
-	echo -ne "Hello World"
-	log_info "ctrl+z pressed"
+    if [[ -n $BUFFER ]]; then
+        # Save the current buffer and cursor position
+        local saved_buffer=$BUFFER
+        local saved_cursor=$CURSOR
+
+        # Clear the buffer
+        BUFFER=""
+
+        # Display "Processing..." message
+        echo -ne "\rPython Server Processing..."
+
+        # Send the input to the Python server
+        local result=$(send_to_python_server "$saved_buffer")
+
+        # Clear the "Processing..." message
+        echo -ne "\r\033[K"
+
+        if [[ -n $result ]]; then
+            BUFFER="$result"
+            CURSOR=${#BUFFER}
+        else
+            echo "No result received from Python server." >&2
+            BUFFER="$saved_buffer"
+            CURSOR=$saved_cursor
+        fi
+
+        zle reset-prompt
+        zle redisplay
+    else
+        echo "Ctrl+Z pressed with empty buffer." >&2
+    fi
 }
 
 # Function: update_cache_on_cd

@@ -1,70 +1,88 @@
-# appServer.zsh
+# File: plugin_zsh_n8n/app/mainApp.zsh
 
-# Function to start the Python app server
-start_app_server() {
-    log_status "Starting Python app server..."
-    python3 "${SERVER_DIR}/appServer.py" &
-    ZSH_COPILOT_APP_SERVER_PID=$!
-    log_status "Python app server started with PID: $ZSH_COPILOT_APP_SERVER_PID"
-}
+# ... (garder le contenu existant)
 
-# Function to stop the Python app server
-stop_app_server() {
-    if [[ -n "$ZSH_COPILOT_APP_SERVER_PID" ]]; then
-        log_status "Stopping Python app server with PID: $ZSH_COPILOT_APP_SERVER_PID"
-        kill $ZSH_COPILOT_APP_SERVER_PID
-        unset ZSH_COPILOT_APP_SERVER_PID
-    else
-        log_status "No running Python app server found"
-    fi
-}
+# Ajouter ces nouvelles fonctions pour gérer le serveur Python
 
-# Function to communicate with the socket server
-communicate_with_server() {
-    local input="$1"
-    local host="${ZSH_COPILOT_CONFIG[SOCKET_HOST]}"
-    local port="${ZSH_COPILOT_CONFIG[SOCKET_PORT]}"
+# Function: start_python_server
+start_python_server() {
+    log_info "Starting Python server..."
+    PYTHON_PATH=${PYTHON_PATH:-python3}
+    PYTHON_SERVER_SCRIPT="${SERVER_DIR}/appServer.py"
+    PID_DIR="${CACHE_DIR}/tmp"
+    PID_FILE="${PID_DIR}/python_server.pid"
 
-    log_status "Sending request to server: $input"
+	export ROOT_DIR LOG_DIR CONFIG_DIR APP_DIR CACHE_DIR UTILS_DIR CORE_DIR SERVER_DIR TEMP_DIR
+    export LOG_FILE CACHE_FILE SOCKET_FILE LOG_LEVEL
 
-    # Use netcat (nc) to send data to the socket server and receive response
-    local response=$(echo "$input" | nc -w 5 $host $port)
-
-    if [[ $? -ne 0 ]]; then
-        log_status "Error: Failed to communicate with server"
-        echo "Error: Failed to communicate with server"
+    # Vérifier si le script Python existe
+    if [[ ! -f "$PYTHON_SERVER_SCRIPT" ]]; then
+        log_error "Python server script not found at $PYTHON_SERVER_SCRIPT"
         return 1
     fi
 
-    log_status "Received response from server: $response"
-    echo "$response"
-}
+    # Créer le répertoire PID s'il n'existe pas
+    if [[ ! -d "$PID_DIR" ]]; then
+        mkdir -p "$PID_DIR"
+        if [[ $? -ne 0 ]]; then
+            log_error "Failed to create PID directory: $PID_DIR"
+            return 1
+        fi
+    fi
 
-# Function to ping the app server
-ping_app_server() {
-    local response=$(communicate_with_server "PING")
-    if [[ $response == *"OK"* ]]; then
-        echo "App server is running"
+    # Lancer le serveur Python avec plus de logging
+    log_info "Launching Python server with command: $PYTHON_PATH $PYTHON_SERVER_SCRIPT"
+    nohup $PYTHON_PATH "$PYTHON_SERVER_SCRIPT" > "${LOG_DIR}/python_server.log" 2>&1 &
+
+    PYTHON_SERVER_PID=$!
+    log_info "Python server process started with PID: $PYTHON_SERVER_PID"
+
+    # Attendre un peu pour voir si le processus survit
+    sleep 2
+
+    if ps -p $PYTHON_SERVER_PID > /dev/null; then
+        echo $PYTHON_SERVER_PID > "$PID_FILE"
+        if [[ $? -ne 0 ]]; then
+            log_error "Failed to write PID file: $PID_FILE"
+            return 1
+        fi
+        log_success "Python server started successfully with PID: $PYTHON_SERVER_PID"
     else
-        echo "App server is not responding"
+        log_error "Python server process died immediately. Check ${LOG_DIR}/python_server.log for details."
+        return 1
     fi
 }
 
-# Initialize the app server when the plugin is loaded
-init_app_server() {
-    start_app_server
-    # Wait a bit for the server to start
-    sleep 10
-    ping_app_server
+# Function: stop_python_server
+stop_python_server() {
+    if [[ -f "${TEMP_DIR}/python_server.pid" ]]; then
+        PYTHON_SERVER_PID=$(cat "${TEMP_DIR}/python_server.pid")
+        if kill -0 $PYTHON_SERVER_PID 2>/dev/null; then
+            kill $PYTHON_SERVER_PID
+            log_info "Python server (PID: $PYTHON_SERVER_PID) stopped."
+        else
+            log_warning "Python server is not running."
+        fi
+        rm "${TEMP_DIR}/python_server.pid"
+    else
+        log_warning "Python server PID file not found."
+    fi
 }
 
-# Clean up when the shell exits
-cleanup_app_server() {
-    stop_app_server
+send_to_python_server() {
+    local message="$1"
+    local socket_path="${SOCKET_FILE}"
+
+    if [[ ! -S "$socket_path" ]]; then
+        echo "Error: Socket file does not exist: $socket_path" >&2
+        return 1
+    fi
+
+    echo "$message" | nc -U "$socket_path"
+    if [[ $? -eq 0 ]]; then
+        echo "Message sent to Python server: '$message'." >&2
+    else
+        echo "Failed to send message to Python server: '$message'." >&2
+        return 1
+    fi
 }
-
-# Register the cleanup function to be called when the shell exits
-add-zsh-hook zshexit cleanup_app_server
-
-# Initialize the app server
-#init_app_server

@@ -32,18 +32,19 @@ init_core() {
         log_error "Failed to initialize cache system"
         return 1
     fi
+	log_success "Cache system initialized successfully"
     log_info "Initializing environment..."
     if ! init_env; then
         log_error "Failed to initialize environment"
         return 1
     fi
     log_success "Environment initialized successfully"
-	log_info "Initializing server..."
-	if ! init_app_server; then
-        log_error "Failed to initialize server"
-        return 1
-    fi
-    log_success "Server initialized successfully"
+	#log_info "Initializing server..."
+	#if ! init_app_server; then
+        #log_error "Failed to initialize server"
+        #return 1
+    #fi
+    #log_success "Server initialized successfully"
     log_success "Core de l'application initialisé avec succès."
     return 0
 }

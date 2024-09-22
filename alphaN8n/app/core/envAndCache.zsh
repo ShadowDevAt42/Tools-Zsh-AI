@@ -1,6 +1,6 @@
 
 init_env() {
-    local env_file="${ROOT_DIR}/.env"
+    local env_file="${ROOT_DIR}/config/.env"
     log_devmod "Loading environment variables from: $env_file"
 
     if [[ ! -f "$env_file" ]]; then
@@ -30,7 +30,7 @@ init_env() {
                 continue
             fi
             export "$key=$value"
-            log_debug "Exported environment variable: $key"
+            log_devmod "Exported environment variable: $key"
             ((env_vars_loaded++))
         fi
     done < "$env_file"
@@ -51,7 +51,8 @@ init_user_cache() {
         log_error "Failed to write to cache file: $CACHE_FILE"
         return 1
     fi
-    log_success "User cache file created successfully: $CACHE_FILE"
+    log_success "User cache file created successfully"
+	log_devmod "User cache file: $CACHE_FILE"
     log_devmod "User cache file content:\n$cache_content"
     return 0
 }

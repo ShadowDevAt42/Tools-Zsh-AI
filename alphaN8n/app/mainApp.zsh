@@ -16,6 +16,7 @@
 source "${CORE_DIR}/mainCore.zsh" || { echo "Failed to load mainCore.zsh"; return 1; }
 source "${UTILS_DIR}/utils.zsh" || { echo "Failed to load utils.zsh"; return 1; }
 source "${SERVER_DIR}/appServer.zsh" || { echo "Failed to load appServer.zsh"; return 1; }
+#source "${SERVER_DIR}/appServer.zsh" || { echo "Failed to load appServer.zsh"; return 1; }
 
 # Function: handle_signal
 handle_signal() {
@@ -55,6 +56,7 @@ init_app() {
         return 1
     fi
     log_success "Application initialized successfully"
+	start_python_server
     return 0
 }
 
@@ -71,7 +73,7 @@ run_app() {
     
     
     # Perform any cleanup operations here
-    cleanup
+    #cleanup
     
     log_info "Application terminated"
 }
@@ -90,12 +92,15 @@ process_command() {
     log_info "Processing command: $cmd"
     # Add your command handling logic
 }
+
 # Function: cleanup
 cleanup() {
 	# Performs necessary cleanup operations before application termination.
 	#
 	# Side effects:
 	#   - Logs information about the cleanup process
+	log_info "Performing cleanup operations..."
+    stop_python_server
     log_info "Performing cleanup operations..."
     # Add any necessary cleanup operations here
 }
