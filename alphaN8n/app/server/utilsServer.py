@@ -10,8 +10,16 @@ def load_config():
         'SOCKET_HOST': os.getenv('SOCKET_HOST', '127.0.0.1'),
         'SOCKET_PORT': int(os.getenv('SOCKET_PORT', '9000')),
         'HTTP_HOST': os.getenv('HTTP_HOST', '0.0.0.0'),
-        'HTTP_PORT': int(os.getenv('HTTP_PORT', '8000')),
-        'N8N_WEBHOOK_URL': os.getenv('N8N_WEBHOOK_URL', 'http://localhost:5678/webhook/zsh-webhook')
+        'HTTP_PORT': int(os.getenv('HTTP_PORT', '8090')),
+        'N8N_WEBHOOK_URL': os.getenv('N8N_WEBHOOK_URL', 'http://localhost:5678/webhook/zsh-webhook'),
+        'DB_HOST': os.getenv('DB_HOST'),
+        'DB_PORT': int(os.getenv('DB_PORT', 5432)),
+        'DB_USER': os.getenv('DB_USER'),
+        'DB_PASSWORD': os.getenv('DB_PASSWORD'),
+        'DB_NAME': os.getenv('DB_NAME'),
+        'DB_POOL_MIN_SIZE': int(os.getenv('DB_POOL_MIN_SIZE', 1)),
+        'DB_POOL_MAX_SIZE': int(os.getenv('DB_POOL_MAX_SIZE', 10)),
+        'UNIX_SOCKET_PATH': os.getenv('UNIX_SOCKET_PATH')
     }
 
 def log_message(message):

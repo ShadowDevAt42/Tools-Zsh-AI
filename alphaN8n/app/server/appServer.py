@@ -3,15 +3,17 @@ import asyncio
 import multiprocessing
 import signal
 import sys
-from socketServer import SocketServer
+from socketServer import UnixSocketServer
 from httpServer import HTTPServer
 from dbServer import DatabaseServer
 from utilsServer import load_config, log_message
+import os
 
 class AppServer:
     def __init__(self):
         self.config = load_config()
-        self.socket_server = SocketServer(self.config['SOCKET_HOST'], self.config['SOCKET_PORT'])
+        self.unix_socket_path = self.config['UNIX_SOCKET_PATH']  # Ajoute cette variable dans ton .env
+        self.socket_server = UnixSocketServer(self.unix_socket_path)        
         self.http_server = HTTPServer(self.config['HTTP_HOST'], self.config['HTTP_PORT'])
         self.db_server = DatabaseServer(self.config)
         self.processes = []
@@ -20,12 +22,13 @@ class AppServer:
         await self.db_server.init_db()
         
         self.processes = [
-            multiprocessing.Process(target=self.socket_server.run),
+            asyncio.create_task(self.socket_server.run()),
             multiprocessing.Process(target=self.http_server.run)
         ]
         
         for process in self.processes:
-            process.start()
+            if isinstance(process, multiprocessing.Process):
+                process.start()
         
         log_message("All servers started. Press CTRL+C to stop.")
 
@@ -47,6 +50,7 @@ class AppServer:
         }
 
 def main():
+    print("DB_HOST:", os.getenv("DB_HOST"))  # Cela affichera la valeur de DB_HOST
     app_server = AppServer()
     
     async def start_and_monitor():

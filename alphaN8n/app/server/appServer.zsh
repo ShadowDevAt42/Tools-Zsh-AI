@@ -54,7 +54,7 @@ ping_app_server() {
 init_app_server() {
     start_app_server
     # Wait a bit for the server to start
-    sleep 2
+    sleep 10
     ping_app_server
 }
 
