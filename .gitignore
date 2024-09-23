@@ -11,6 +11,8 @@
 *.env
 *.env_ex
 
+save/
 pkg/
 src/
 old/
+alphaN8n/
