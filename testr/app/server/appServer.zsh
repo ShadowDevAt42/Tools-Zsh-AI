@@ -2,33 +2,15 @@
 
 # Description:
 # This file contains functions for managing the Python server component of the ZSH Copilot n8n application.
-# It includes functions to start, stop, check, and restart the Python server, as well as send messages to it.
-
-# Function: is_python_server_running
-# Checks if the Python server is running
-is_python_server_running() {
-    local pid_file="${TEMP_DIR}/python_server.pid"
-    if [[ -f "$pid_file" ]]; then
-        local python_server_pid=$(cat "$pid_file")
-        if kill -0 $python_server_pid 2>/dev/null; then
-            return 0  # Server is running
-        fi
-    fi
-    return 1  # Server is not running
-}
+# It includes functions to start and stop the Python server, as well as send messages to it.
 
 # Function: start_python_server
 # Starts the Python server and manages its PID
 start_python_server() {
-    if is_python_server_running; then
-        log_info "Python server is already running."
-        return 0
-    fi
-
     log_info "Starting Python server..."
     local python_path=${PYTHON_PATH:-python3}
     local python_server_script="${SERVER_DIR}/appServer.py"
-    local pid_dir="${TEMP_DIR}/"
+    local pid_dir="${CACHE_DIR}/tmp"
     local pid_file="${pid_dir}/python_server.pid"
 
     # Export necessary environment variables
@@ -64,7 +46,7 @@ start_python_server() {
             log_error "Failed to write PID file: $pid_file"
             return 1
         fi
-        log_success "Python server (ZSH Copilot n8n) started successfully with PID: $python_server_pid"
+        log_success "Python server started successfully with PID: $python_server_pid"
     else
         log_error "Python server process died immediately. Check ${LOG_DIR}/python_server.log for details."
         return 1
@@ -74,7 +56,7 @@ start_python_server() {
 # Function: stop_python_server
 # Stops the Python server if it's running
 stop_python_server() {
-    local pid_file="${TEMP_DIR}//python_server.pid"
+    local pid_file="${TEMP_DIR}/python_server.pid"
     if [[ -f "$pid_file" ]]; then
         local python_server_pid=$(cat "$pid_file")
         if kill -0 $python_server_pid 2>/dev/null; then
@@ -87,14 +69,6 @@ stop_python_server() {
     else
         log_warning "Python server PID file not found."
     fi
-}
-
-# Function: restart_python_server
-# Restarts the Python server
-restart_python_server() {
-    log_info "Restarting Python server..."
-    stop_python_server
-    start_python_server
 }
 
 # Function: send_to_python_server
@@ -116,13 +90,5 @@ send_to_python_server() {
     fi
 }
 
-# Function: ensure_python_server_running
-# Ensures that the Python server is running, starting it if necessary
-ensure_python_server_running() {
-    if ! is_python_server_running; then
-        log_info "Python server is not running. Starting it now..."
-        start_python_server
-    else
-        log_info "Python server is already running."
-    fi
-}
+# Export the functions
+#export start_python_server stop_python_server send_to_python_server

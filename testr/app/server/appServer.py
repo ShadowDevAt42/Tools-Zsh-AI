@@ -10,8 +10,6 @@ from typing import Dict, Any
 
 from dotenv import load_dotenv
 from unixSocketServer import UnixSocketServer
-from dbServer import DbServer
-from httpServer import HttpServer  # Nouvelle importation
 
 # Color constants for logging
 RED = '\033[1;31m'
@@ -92,20 +90,6 @@ def get_config(log_file: str) -> Dict[str, str]:
         env_config = load_env_config(env_file_path, log_file)
         merged_config = merge_configs(zsh_config, env_config, log_file)
         merged_config['ROOT_DIR'] = root_dir
-        
-        # Vérification explicite des variables de base de données
-        required_db_vars = ['DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASSWORD', 'DB_POOL_MIN_SIZE', 'DB_POOL_MAX_SIZE']
-        for var in required_db_vars:
-            if var not in merged_config:
-                raise KeyError(f"Required database configuration variable {var} is missing")
-        
-        # Log des variables de base de données (en masquant le mot de passe)
-        for var in required_db_vars:
-            if var == 'DB_PASSWORD':
-                print_and_log(f"{var}: ********", log_file)
-            else:
-                print_and_log(f"{var}: {merged_config[var]}", log_file)
-        
         print_and_log("Configuration loaded successfully.", log_file)
         return merged_config
     except Exception as e:
@@ -148,45 +132,15 @@ async def main() -> None:
     socket_path = config.get('SOCKET_FILE', '/tmp/zsh_copilot.sock')
     unix_socket_server = UnixSocketServer(socket_path)
     
-    # Create and initialize the database server with only the necessary DB config
-    db_config = {
-        'DB_HOST': config['DB_HOST'],
-        'DB_PORT': config['DB_PORT'],
-        'DB_NAME': config['DB_NAME'],
-        'DB_USER': config['DB_USER'],
-        'DB_PASSWORD': config['DB_PASSWORD'],
-        'DB_POOL_MIN_SIZE': config['DB_POOL_MIN_SIZE'],
-        'DB_POOL_MAX_SIZE': config['DB_POOL_MAX_SIZE']
-    }
-    db_server = DbServer(db_config)
-    
-    # Create the HTTP server
-    http_host = config.get('HTTP_SERV_URL', 'localhost')
-    http_port = int(config.get('HTTP_SERV_PORT', 8080))
-    http_server = HttpServer(http_host, http_port)
-    
     try:
-        log_info("Initializing database connection pool")
-        await db_server.init_pool()
-        
         log_info("Starting Unix socket server")
-        unix_socket_task = asyncio.create_task(unix_socket_server.run())
-        
-        log_info("Starting HTTP server")
-        http_server_task = asyncio.create_task(http_server.start())
-        
-        # Wait for both servers to complete (which they won't unless there's an error)
-        await asyncio.gather(unix_socket_task, http_server_task)
+        await unix_socket_server.run()
     except KeyboardInterrupt:
         log_info("Received keyboard interrupt. Shutting down...")
     except Exception as e:
         log_error(f"An unexpected error occurred: {str(e)}")
         log_error(f"Traceback: {traceback.format_exc()}")
     finally:
-        log_info("Closing database connection pool")
-        await db_server.close_pool()
-        log_info("Stopping HTTP server")
-        await http_server.stop()
         log_info("Python script ended")
         print_and_log("Python script ended", initial_log_file)
 

@@ -25,44 +25,30 @@ ORANGE='\033[38;5;208m'      # Orange for WARNING
 GREEN='\033[1;32m'           # Green for SUCCESS
 YELLOW='\033[0;33m'          # Yellow for INFO
 BLUE='\033[0;34m'            # Blue for STATUS
-PURPLE='\033[0;35'           # Violet for DEBUG
+PURPLE='\033[0;35m'           # Violet for DEBUG
 PINK='\033[38;5;205m'        # Pink for DEVMOD (development mode)
 NC='\033[0m'                 # No Color
-
+# Color codes for hard_logs
+H_RED=$'\e[31m'
+H_ORANGE=$'\e[38;5;208m'
+H_GREEN=$'\e[32m'
+H_YELLOW=$'\e[33m'
+H_BLUE=$'\e[34m'
+H_PURPLE=$'\e[35m'
+H_PINK=$'\e[38;5;205m'
+H_NC=$'\e[0m'  # Pas de couleur
 # Function to map log level names to numeric values for comparison
 get_log_level_value() {
-    # Maps log level names to numeric values.
-    #
-    # Args:
-    #   level (str): The log level name (e.g., ERROR, WARNING, INFO, SUCCESS, DEBUG, DEVMOD).
-    #
-    # Returns:
-    #   int: The numeric value corresponding to the log level.
-    case "$1" in
-        ERROR)
-            echo 1
-            ;;
-        WARNING)
-            echo 2
-            ;;
-        SUCCESS)
-            echo 3
-            ;;
-        INFO)
-            echo 4
-            ;;
-        STATUS)
-            echo 5
-            ;;
-        DEBUG)
-            echo 6
-            ;;
-		DEVMOD)
-			echo 7
-			;;
-        *)
-            echo 0  # Undefined or unknown log level
-            ;;
+    local level="$1"
+    case "$level" in
+        ERROR)   echo 4 ;;
+        WARNING) echo 4 ;;
+        SUCCESS) echo 4 ;;
+        INFO)    echo 4 ;;
+        STATUS)  echo 4 ;;
+        DEBUG)   echo 6 ;;
+        DEVMOD)  echo 7 ;;
+        *)       echo 0 ;;  # Undefined or unknown log level
     esac
 }
 
@@ -71,16 +57,9 @@ current_log_level=$(get_log_level_value "$LOG_LEVEL")
 
 # Function to log a message with a specific level
 log_message() {
-    # Logs a message with the given severity level, timestamp, and color.
-    #
-    # Args:
-    #   log_level (str): Severity level of the log (e.g., INFO, WARNING, ERROR, SUCCESS, DEBUG, DEBUG_EX).
-    #   message (str): The message to log.
-    #   color (str): Color code for the log message.
-
-    local log_level=$1
-    local message=$2
-    local color=$3
+    local log_level="$1"
+    local message="$2"
+    local color="$3"
     local message_level=$(get_log_level_value "$log_level")
 
     # Only log the message if its level is less than or equal to the current log level
@@ -91,37 +70,38 @@ log_message() {
     fi
 }
 
-# Function to log informational messages
-log_info() {
-    # Logs an informational message.
-    #
-    # Args:
-    #   message (str): Informational message to log.
-    log_message "INFO" "$1" "$YELLOW"
+# Logging functions for different severity levels
+log_info()    { log_message "INFO"    "$1" "$YELLOW"; }
+log_warning() { log_message "WARNING" "$1" "$ORANGE"; }
+log_error()   { log_message "ERROR"   "$1" "$RED";    }
+log_success() { log_message "SUCCESS" "$1" "$GREEN";  }
+log_status()  { log_message "STATUS"  "$1" "$BLUE";   }
+log_debug()   { log_message "DEBUG"   "$1" "$PURPLE"; }
+log_devmod()  { log_message "DEVMOD"  "$1" "$PINK";   }
+
+# Function to log a message with a specific level
+hard_log_message() {
+    local hard_log_level="$1"
+    local message="$2"
+    local color="$3"
+    local message_level=$(get_log_level_value "$hard_log_level")
+
+    # Only log the message if its level is less than or equal to the current log level
+    if (( message_level <= current_log_level )) && [[ "$HARD_LOG_LEVEL" == "true" ]]; then
+        local timestamp=$(date +"%Y-%m-%d %H:%M:%S")
+        local flag="{ZSH}"
+        echo -e "${color}[$hard_log_level] $message${NC}"
+    fi
 }
-# Function to log warning messages
-log_warning() {
-    log_message "WARNING" "$1" "$ORANGE"
-}
-# Function to log error messages
-log_error() {
-    log_message "ERROR" "$1" "$RED"
-}
-# Function to log success messages
-log_success() {
-    log_message "SUCCESS" "$1" "$GREEN"
-}
-log_status() {
-	log_message "STATUS" "$1" "$BLUE"
-}
-# Function to log debug messages
-log_debug() {
-    log_message "DEBUG" "$1" "$PURPLE"
-}
-# Function to log advanced dev messages
-log_devmod() {
-    log_message "DEVMOD" "$1" "$PINK"
-}
+
+# Logging functions for different severity levels
+hard_log_info()    { hard_log_message "INFO"    "$1" "$H_YELLOW"; }
+hard_log_warning() { hard_log_message "WARNING" "$1" "$H_ORANGE"; }
+hard_log_error()   { hard_log_message "ERROR"   "$1" "$H_RED";    }
+hard_log_success() { hard_log_message "SUCCESS" "$1" "$H_GREEN";  }
+hard_log_status()  { hard_log_message "STATUS"  "$1" "$H_BLUE";   }
+hard_log_debug()   { hard_log_message "DEBUG"   "$1" "$H_PURPLE"; }
+hard_log_devmod()  { hard_log_message "DEVMOD"  "$1" "$H_PINK";   }
 
 # HANDLING ERROR
 # ---------------------------
@@ -150,8 +130,8 @@ log_devmod() {
 
 # Function to handle errors
 handle_error() {
-    local error_code=$1
-    local error_message=$2
+    local error_code="$1"
+    local error_message="$2"
 
     log_devmod "Handling error with code $error_code: $error_message"
 
@@ -168,7 +148,7 @@ handle_error() {
         $E_PERMISSION_DENIED)
             log_error "Permission denied: $error_message"
             ;;
-		$E_FILESYSTEM)
+        $E_FILESYSTEM)
             log_error "Filesystem error: $error_message"
             ;;
         $E_DEPENDENCIES)

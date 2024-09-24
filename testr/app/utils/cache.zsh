@@ -5,36 +5,13 @@
 # It gathers various system and user details to maintain an up-to-date cache that reflects the current environment.
 
 # Function: get_system_info
+# Retrieves basic system information
 get_system_info() {
-    log_debug "Retrieving system information..."
-    local system_info
-
-    case "$OSTYPE" in
-        darwin*)
-            if ! system_info=$(sw_vers 2>/dev/null | awk '{print $2}' | paste -sd "." -); then
-                system_info="macOS (version retrieval failed)"
-                log_warning "Failed to retrieve macOS version."
-            fi
-            log_debug "Detected macOS system: Version $system_info."
-            ;;
-        linux*)
-            if [ -f /etc/os-release ]; then
-                system_info=$(. /etc/os-release && echo "$PRETTY_NAME") || system_info="Linux (distribution unknown)"
-            elif [ -f /etc/lsb-release ]; then
-                system_info=$(. /etc/lsb-release && echo "$DISTRIB_DESCRIPTION") || system_info="Linux (distribution unknown)"
-            else
-                system_info="Unknown Linux distribution"
-            fi
-            [ "$system_info" = "Linux (distribution unknown)" ] && log_warning "Failed to determine Linux distribution."
-            log_debug "Detected Linux system: $system_info."
-            ;;
-        *)
-            system_info="Unknown operating system"
-            log_warning "Unknown operating system detected: $OSTYPE"
-            ;;
-    esac
-    echo "$system_info"
+    local os_name=$(uname -s)
+    local os_version=$(uname -r)
+    echo "${os_name} ${os_version}"
 }
+
 # Function: get_memory_info
 # Retrieves available memory information based on the operating system
 get_memory_info() {
@@ -52,7 +29,9 @@ get_memory_info() {
 get_disk_usage() {
     df -h / | awk 'NR==2 {print $5}'
 }
+
 # Function: generate_cache_content
+# Gathers various user and system information to generate the cache content
 generate_cache_content() {
     local username=$(whoami)
     local system_info=$(get_system_info)
@@ -102,3 +81,6 @@ EOF
         echo "$json_content"
     fi
 }
+
+# Export the main function
+#export generate_cache_content

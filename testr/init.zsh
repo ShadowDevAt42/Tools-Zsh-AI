@@ -3,29 +3,25 @@
 # File: init.zsh
 
 # Description:
-# This script manages the initialization of system files and dependency checks for the ZSH Copilot n8n application.
+# Ce script gère l'initialisation des fichiers système et la vérification des dépendances pour l'application ZSH Copilot n8n.
 
-source "${UTILS_DIR}/security.zsh" || { echo "Failed to load security.zsh"; return 1; }
+source "${UTILS_DIR}/logsAndError.zsh" || { echo "Échec du chargement de logsAndError.zsh"; return 1; }
+source "${UTILS_DIR}/security.zsh" || { echo "Échec du chargement de security.zsh"; return 1; }
 
-# List of required commands for the application
+# Liste des commandes requises pour l'application
 REQUIRED_COMMANDS=("curl" "jq" "git" "nc")
 
-# Function: create_directory
-# Creates a directory if it doesn't exist
+# Fonctions de gestion des fichiers et répertoires
 create_directory() {
     local dir="$1"
     [[ ! -d "$dir" ]] && mkdir -p "$dir" || return 0
 }
 
-# Function: create_file
-# Creates a file if it doesn't exist
 create_file() {
     local file="$1"
     [[ ! -f "$file" ]] && touch "$file" || return 0
 }
 
-# Function: rotate_log_file
-# Rotates the log file and manages old log files
 rotate_log_file() {
     local file="$1"
     local timestamp=$(date +"%Y%m%d_%H%M%S")
@@ -43,8 +39,6 @@ rotate_log_file() {
     } || return 1
 }
 
-# Function: manage_cache_file
-# Manages the cache file, optionally resetting it
 manage_cache_file() {
     local file="$1"
     if [[ ! -f "$file" ]]; then
@@ -54,8 +48,7 @@ manage_cache_file() {
     fi
 }
 
-# Function: init_sysfile
-# Initializes necessary folders and files for the application
+# Initialisation des fichiers système
 init_sysfile() {
     local dirs_to_create=("$LOG_DIR" "$CACHE_DIR")
     local log_files=("$LOG_FILE")
@@ -85,14 +78,11 @@ init_sysfile() {
     return 0
 }
 
-# Function: check_command
-# Checks if a specified command is available in the system PATH
+# Vérification des dépendances
 check_command() {
     command -v $1 &> /dev/null || { log_warning "Commande non trouvée : $1"; return 1; }
 }
 
-# Function: check_dependencies
-# Verifies that all required commands are available in the system
 check_dependencies() {
     log_info "Vérification de toutes les dépendances"
     local missing_deps=()

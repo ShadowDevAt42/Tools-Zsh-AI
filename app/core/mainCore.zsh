@@ -28,16 +28,14 @@ init_core() {
     log_info "Initialisation du core de l'application..."
 
 	log_info "Initializing cache system..."
-    if ! init_user_cache; then
-        log_error "Failed to initialize cache system"
-        return 1
-    fi
+    init_user_cache || { echo "Failed to initialize cache system"; return 1; }
+
 	log_success "Cache system initialized successfully"
     log_info "Initializing environment..."
-    if ! init_env; then
-        log_error "Failed to initialize environment"
-        return 1
-    fi
+    #if ! init_env; then
+        #log_error "Failed to initialize environment"
+        #return 1
+    #fi
     log_success "Environment initialized successfully"
 	#log_info "Initializing server..."
 	#if ! init_app_server; then
@@ -51,11 +49,6 @@ init_core() {
 
 # Function: main_core
 main_core() {
-    if init_core; then
-        log_info "Core initialisé avec succès."
-        return 0
-    else
-        log_error "Échec de l'initialisation du core."
-        return 1
-    fi
+    init_core || { echo "Échec de l'initialisation du core."; return 1; }
+
 }

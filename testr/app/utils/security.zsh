@@ -79,3 +79,6 @@ validate_input() {
         return 1
     fi
 }
+
+# Export the functions
+#export sanitize_input validate_file_path check_suspicious_input secure_input validate_input

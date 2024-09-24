@@ -62,3 +62,6 @@ init_user_cache() {
     log_devmod "User cache file content:\n$cache_content"
     return 0
 }
+
+# Export the functions
+export -f init_env init_user_cache
