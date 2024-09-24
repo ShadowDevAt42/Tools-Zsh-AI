@@ -2,38 +2,44 @@ import aiohttp
 import json
 from typing import Any, Dict
 import logging
+import aiofiles
+import os
 
-# Constants
-N8N_URL = "http://localhost:5678/webhook"
+def ensure_file_exists(file_path: str, default_content: dict = {}):
+    directory = os.path.dirname(file_path)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+        log_message(f"Created directory: {directory}")
+    
+    if not os.path.exists(file_path):
+        with open(file_path, 'w') as f:
+            json.dump(default_content, f, indent=2)
+        log_message(f"Created file with default content: {file_path}")
 
+async def update_cache_file(cache_file: str, content: dict):
+    async with aiofiles.open(cache_file, 'w') as f:
+        await f.write(json.dumps(content, indent=2))
+    log_message(f"Updated cache file: {cache_file}")
+
+def delete_file_if_exists(file_path: str):
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        log_message(f"Deleted file: {file_path}")
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-async def send_to_n8n(message: str) -> Dict[str, Any]:
-    """
-    Send a message to n8n and return the response.
-
-    Args:
-        message (str): The message to send to n8n.
-
-    Returns:
-        Dict[str, Any]: The JSON response from n8n.
-
-    Raises:
-        aiohttp.ClientError: If there's an error with the HTTP request.
-        json.JSONDecodeError: If the response is not valid JSON.
-    """
+async def send_to_n8n(n8n_url: str, payload: Dict[str, Any]) -> Dict[str, Any]:
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.post(N8N_URL, json={"message": message}) as response:
+            async with session.post(n8n_url, json=payload) as response:
                 response.raise_for_status()
                 return await response.json()
     except aiohttp.ClientError as e:
-        logger.error(f"Error sending message to n8n: {e}")
+        logging.error(f"Error sending message to n8n: {e}")
         raise
     except json.JSONDecodeError as e:
-        logger.error(f"Error decoding JSON response from n8n: {e}")
+        logging.error(f"Error decoding JSON response from n8n: {e}")
         raise
 
 def log_message(message: str, level: str = "INFO") -> None:

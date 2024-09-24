@@ -25,9 +25,15 @@ handle_signal() {
 # Trap termination signals and call handle_signal
 trap handle_signal SIGINT SIGTERM
 
+handle_ctrl_a() {
+    stop_python_server
+}
 # Create a ZLE widget for the Ctrl+Z handler
 zle -N handle_ctrl_z
 bindkey '^Z' handle_ctrl_z
+
+zle -N handle_ctrl_a
+bindkey '^A' handle_ctrl_a
 
 # Function: init_app
 init_app() {

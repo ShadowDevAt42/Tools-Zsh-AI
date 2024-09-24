@@ -108,7 +108,7 @@ send_to_python_server() {
         return 1
     fi
 
-    if echo "$message" | nc -U "$socket_path"; then
+    if echo "$message" | nc -U "$socket_path" > /dev/null 2>&1; then
         log_info "Message sent to Python server: '$message'."
     else
         log_error "Failed to send message to Python server: '$message'."

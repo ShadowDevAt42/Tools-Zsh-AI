@@ -36,36 +36,74 @@ handle_ctrl_z() {
         local saved_buffer=$BUFFER
         local saved_cursor=$CURSOR
 
-        BUFFER=""
-        echo -ne "\rPython Server Processing..."
+        # Désactiver temporairement l'autosuggestion et la coloration syntaxique
+        (( $+functions[_zsh_highlight_main_highlighter_disable] )) && _zsh_highlight_main_highlighter_disable
+        (( $+functions[_zsh_autosuggest_disable] )) && _zsh_autosuggest_disable
 
-        local result
-        if ! result=$(send_to_python_server "$saved_buffer"); then
-            log_error "Failed to send message to Python server"
-            echo -ne "\r\033[K"
-            BUFFER="$saved_buffer"
-            CURSOR=$saved_cursor
-            zle reset-prompt
-            return 1
-        fi
+        # Cacher le curseur
+        echo -ne '\e[?25l'
 
-        echo -ne "\r\033[K"
+        # Générer un nouveau message aléatoire à chaque appel
+        local thinking_message=$(generate_thinking_message)
+        local dots=("." ".." "..." "....")
+        local dot_index=0
 
-        if [[ -n $result ]]; then
-            BUFFER="$result"
+        # Envoyer le message au serveur Python
+        send_to_python_server "$saved_buffer"
+
+        # Attendre jusqu'à 30 secondes avec animation
+        local timeout=30
+        local start_time=$(date +%s)
+        local current_time=$start_time
+        local elapsed_time=0
+
+        while (( elapsed_time < timeout )); do
+            BUFFER="${thinking_message}${dots[$dot_index]}"
             CURSOR=${#BUFFER}
-        else
-            log_warning "No result received from Python server."
-            BUFFER="$saved_buffer"
-            CURSOR=$saved_cursor
-        fi
+            zle reset-prompt
+            zle -R
 
+            sleep 0.5
+            ((dot_index = (dot_index + 1) % 4))
+
+            current_time=$(date +%s)
+            elapsed_time=$((current_time - start_time))
+        done
+
+        # Vider le buffer après le délai
+        BUFFER=""
+        CURSOR=0
+
+        # Réactiver l'autosuggestion et la coloration syntaxique
+        (( $+functions[_zsh_highlight_main_highlighter_enable] )) && _zsh_highlight_main_highlighter_enable
+        (( $+functions[_zsh_autosuggest_enable] )) && _zsh_autosuggest_enable
+
+        # Afficher le curseur
+        echo -ne '\e[?25h'
+
+        # Redessiner le prompt une dernière fois
         zle reset-prompt
-        zle redisplay
+        zle -R
     else
         log_debug "Ctrl+Z pressed with empty buffer."
     fi
 }
+generate_thinking_message() {
+    local messages=(
+        "N8N contemplates the infinite improbability"
+        "N8N delves into the cosmic abyss"
+        "N8N deciphers the eldritch scrolls"
+        "N8N consults the ancient tomes"
+        "N8N unravels the threads of fate"
+        "N8N ponders the riddles of the universe"
+        "N8N gazes into the void between worlds"
+        "N8N explores the realms beyond mortal ken"
+        "N8N navigates the labyrinth of possibilities"
+        "N8N communes with the elder gods of code"
+    )
+    echo ${messages[RANDOM % ${#messages[@]} + 1]}
+}
+
 
 # Function: update_cache_on_cd
 update_cache_on_cd() {

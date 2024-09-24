@@ -145,8 +145,17 @@ async def main() -> None:
     log_info(f"Using LOG_FILE: {LOG_FILE}")
     
     # Create and start the Unix socket server
+    config = get_config(LOG_FILE)
+    cache_file = config.get('CACHE_FILE', '/path/to/cache/file.json')
+    active_sessions_file = config.get('ACTIVE_SESSIONS_CACHE_FILE', os.path.join(config['CACHE_DIR'], 'active_sessions.json'))
+
+    # Assurez-vous que le répertoire du cache existe
+    os.makedirs(os.path.dirname(active_sessions_file), exist_ok=True)
+
     socket_path = config.get('SOCKET_FILE', '/tmp/zsh_copilot.sock')
-    unix_socket_server = UnixSocketServer(socket_path)
+    unix_socket_server = UnixSocketServer(socket_path, config, cache_file, active_sessions_file)
+
+
     
     # Create and initialize the database server with only the necessary DB config
     db_config = {
@@ -170,8 +179,7 @@ async def main() -> None:
         await db_server.init_pool()
         
         log_info("Starting Unix socket server")
-        unix_socket_task = asyncio.create_task(unix_socket_server.run())
-        
+        unix_socket_task = asyncio.create_task(unix_socket_server.run())    
         log_info("Starting HTTP server")
         http_server_task = asyncio.create_task(http_server.start())
         
